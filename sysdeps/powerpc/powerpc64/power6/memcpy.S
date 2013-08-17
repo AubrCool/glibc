@@ -402,15 +402,28 @@ L(das_tail2):
     blt   cr6,5f
     srdi  7,6,16
     bgt	  cr6,3f
+#ifdef __LITTLE_ENDIAN__
+    sth   7,0(3)
+#else
     sth   6,0(3)
+#endif
     b     7f
     .align  4
 3:
+#ifdef __LITTLE_ENDIAN__
+    rotlwi 6,6,24
+    stb   6,0(3)
+    sth   7,1(3)
+#else
     stb   7,0(3)
     sth   6,1(3)
+#endif
     b     7f
     .align  4
 5:
+#ifdef __LITTLE_ENDIAN__
+    rotlwi 6,6,8
+#endif
     stb   6,0(3)
 7:
     cmpldi	cr1,10,16
@@ -597,13 +610,24 @@ L(du1_do):
     bf      30,L(du1_1dw)
 
     /* there are at least two DWs to copy */
+    /* FIXME: can combine last shift and "or" into "rldimi" */
+#ifdef __LITTLE_ENDIAN__
+    srdi     0,6, 8
+    sldi     8,7, 64-8
+#else
     sldi     0,6, 8
     srdi     8,7, 64-8
+#endif
     or      0,0,8
     ld      6,16(5)
     std     0,0(4)
+#ifdef __LITTLE_ENDIAN__
+    srdi     0,7, 8
+    sldi     8,6, 64-8
+#else
     sldi     0,7, 8
     srdi     8,6, 64-8
+#endif
     or      0,0,8
     ld      7,24(5)
     std     0,8(4)
@@ -612,8 +636,13 @@ L(du1_do):
     blt     cr6,L(du1_fini)  /* if total DWs = 3, then bypass loop */
     bf      31,L(du1_loop)
     /* there is a third DW to copy */
+#ifdef __LITTLE_ENDIAN__
+    srdi     0,6, 8
+    sldi     8,7, 64-8
+#else
     sldi     0,6, 8
     srdi     8,7, 64-8
+#endif
     or      0,0,8
     std     0,0(4)
     mr      6,7
@@ -624,8 +653,13 @@ L(du1_do):
     b       L(du1_loop)
     .align 4
 L(du1_1dw):
+#ifdef __LITTLE_ENDIAN__
+    srdi     0,6, 8
+    sldi     8,7, 64-8
+#else
     sldi     0,6, 8
     srdi     8,7, 64-8
+#endif
     addi    5,5,16
     or      0,0,8
     bf      31,L(du1_loop)
@@ -637,23 +671,43 @@ L(du1_1dw):
     .align 4
 /* copy 32 bytes at a time */
 L(du1_loop):
+#ifdef __LITTLE_ENDIAN__
+    srdi   0,6, 8
+    sldi   8,7, 64-8
+#else
     sldi   0,6, 8
     srdi   8,7, 64-8
+#endif
     or    0,0,8
     ld    6,0(5)
     std   0,0(4)
+#ifdef __LITTLE_ENDIAN__
+    srdi   0,7, 8
+    sldi   8,6, 64-8
+#else
     sldi   0,7, 8
     srdi   8,6, 64-8
+#endif
     or    0,0,8
     ld    7,8(5)
     std   0,8(4)
+#ifdef __LITTLE_ENDIAN__
+    srdi   0,6, 8
+    sldi   8,7, 64-8
+#else
     sldi   0,6, 8
     srdi   8,7, 64-8
+#endif
     or    0,0,8
     ld    6,16(5)
     std   0,16(4)
+#ifdef __LITTLE_ENDIAN__
+    srdi   0,7, 8
+    sldi   8,6, 64-8
+#else
     sldi   0,7, 8
     srdi   8,6, 64-8
+#endif
     or    0,0,8
     ld    7,24(5)
     std   0,24(4)
@@ -663,9 +717,14 @@ L(du1_loop):
     .align 4
 L(du1_fini):
     /* calculate and store the final DW */
+#ifdef __LITTLE_ENDIAN__
+    srdi   0,6, 8
+    sldi   8,7, 64-8
+#else
     sldi   0,6, 8
     srdi   8,7, 64-8
-    or    0,0,8  
+#endif
+    or    0,0,8
     std   0,0(4)
     b     L(du_done)
 
@@ -674,13 +733,23 @@ L(du2_do):
     bf      30,L(du2_1dw)
 
     /* there are at least two DWs to copy */
+#ifdef __LITTLE_ENDIAN__
+    srdi     0,6, 16
+    sldi     8,7, 64-16
+#else
     sldi     0,6, 16
     srdi     8,7, 64-16
+#endif
     or      0,0,8
     ld      6,16(5)
     std     0,0(4)
+#ifdef __LITTLE_ENDIAN__
+    srdi     0,7, 16
+    sldi     8,6, 64-16
+#else
     sldi     0,7, 16
     srdi     8,6, 64-16
+#endif
     or      0,0,8
     ld      7,24(5)
     std     0,8(4)
@@ -689,8 +758,13 @@ L(du2_do):
     blt     cr6,L(du2_fini)  /* if total DWs = 3, then bypass loop */
     bf      31,L(du2_loop)
     /* there is a third DW to copy */
+#ifdef __LITTLE_ENDIAN__
+    srdi     0,6, 16
+    sldi     8,7, 64-16
+#else
     sldi     0,6, 16
     srdi     8,7, 64-16
+#endif
     or      0,0,8
     std     0,0(4)
     mr      6,7
@@ -701,8 +775,13 @@ L(du2_do):
     b       L(du2_loop)
     .align 4
 L(du2_1dw):
+#ifdef __LITTLE_ENDIAN__
+    srdi     0,6, 16
+    sldi     8,7, 64-16
+#else
     sldi     0,6, 16
     srdi     8,7, 64-16
+#endif
     addi    5,5,16
     or      0,0,8
     bf      31,L(du2_loop)
@@ -714,23 +793,43 @@ L(du2_1dw):
     .align 4
 /* copy 32 bytes at a time */
 L(du2_loop):
+#ifdef __LITTLE_ENDIAN__
+    srdi   0,6, 16
+    sldi   8,7, 64-16
+#else
     sldi   0,6, 16
     srdi   8,7, 64-16
+#endif
     or    0,0,8
     ld    6,0(5)
     std   0,0(4)
+#ifdef __LITTLE_ENDIAN__
+    srdi   0,7, 16
+    sldi   8,6, 64-16
+#else
     sldi   0,7, 16
     srdi   8,6, 64-16
+#endif
     or    0,0,8
     ld    7,8(5)
     std   0,8(4)
+#ifdef __LITTLE_ENDIAN__
+    srdi   0,6, 16
+    sldi   8,7, 64-16
+#else
     sldi   0,6, 16
     srdi   8,7, 64-16
+#endif
     or    0,0,8
     ld    6,16(5)
     std   0,16(4)
+#ifdef __LITTLE_ENDIAN__
+    srdi   0,7, 16
+    sldi   8,6, 64-16
+#else
     sldi   0,7, 16
     srdi   8,6, 64-16
+#endif
     or    0,0,8
     ld    7,24(5)
     std   0,24(4)
@@ -740,9 +839,14 @@ L(du2_loop):
     .align 4
 L(du2_fini):
     /* calculate and store the final DW */
+#ifdef __LITTLE_ENDIAN__
+    srdi   0,6, 16
+    sldi   8,7, 64-16
+#else
     sldi   0,6, 16
     srdi   8,7, 64-16
-    or    0,0,8  
+#endif
+    or    0,0,8
     std   0,0(4)
     b     L(du_done)
 
@@ -751,13 +855,23 @@ L(du3_do):
     bf      30,L(du3_1dw)
 
     /* there are at least two DWs to copy */
+#ifdef __LITTLE_ENDIAN__
+    srdi     0,6, 24
+    sldi     8,7, 64-24
+#else
     sldi     0,6, 24
     srdi     8,7, 64-24
+#endif
     or      0,0,8
     ld      6,16(5)
     std     0,0(4)
+#ifdef __LITTLE_ENDIAN__
+    srdi     0,7, 24
+    sldi     8,6, 64-24
+#else
     sldi     0,7, 24
     srdi     8,6, 64-24
+#endif
     or      0,0,8
     ld      7,24(5)
     std     0,8(4)
@@ -766,8 +880,13 @@ L(du3_do):
     blt     cr6,L(du3_fini)  /* if total DWs = 3, then bypass loop */
     bf      31,L(du3_loop)
     /* there is a third DW to copy */
+#ifdef __LITTLE_ENDIAN__
+    srdi     0,6, 24
+    sldi     8,7, 64-24
+#else
     sldi     0,6, 24
     srdi     8,7, 64-24
+#endif
     or      0,0,8
     std     0,0(4)
     mr      6,7
@@ -778,8 +897,13 @@ L(du3_do):
     b       L(du3_loop)
     .align 4
 L(du3_1dw):
+#ifdef __LITTLE_ENDIAN__
+    srdi     0,6, 24
+    sldi     8,7, 64-24
+#else
     sldi     0,6, 24
     srdi     8,7, 64-24
+#endif
     addi    5,5,16
     or      0,0,8
     bf      31,L(du3_loop)
@@ -791,23 +915,43 @@ L(du3_1dw):
     .align 4
 /* copy 32 bytes at a time */
 L(du3_loop):
+#ifdef __LITTLE_ENDIAN__
+    srdi   0,6, 24
+    sldi   8,7, 64-24
+#else
     sldi   0,6, 24
     srdi   8,7, 64-24
+#endif
     or    0,0,8
     ld    6,0(5)
     std   0,0(4)
+#ifdef __LITTLE_ENDIAN__
+    srdi   0,7, 24
+    sldi   8,6, 64-24
+#else
     sldi   0,7, 24
     srdi   8,6, 64-24
+#endif
     or    0,0,8
     ld    7,8(5)
     std   0,8(4)
+#ifdef __LITTLE_ENDIAN__
+    srdi   0,6, 24
+    sldi   8,7, 64-24
+#else
     sldi   0,6, 24
     srdi   8,7, 64-24
+#endif
     or    0,0,8
     ld    6,16(5)
     std   0,16(4)
+#ifdef __LITTLE_ENDIAN__
+    srdi   0,7, 24
+    sldi   8,6, 64-24
+#else
     sldi   0,7, 24
     srdi   8,6, 64-24
+#endif
     or    0,0,8
     ld    7,24(5)
     std   0,24(4)
@@ -817,9 +961,14 @@ L(du3_loop):
     .align 4
 L(du3_fini):
     /* calculate and store the final DW */
+#ifdef __LITTLE_ENDIAN__
+    srdi   0,6, 24
+    sldi   8,7, 64-24
+#else
     sldi   0,6, 24
     srdi   8,7, 64-24
-    or    0,0,8  
+#endif
+    or    0,0,8
     std   0,0(4)
     b     L(du_done)
 
@@ -834,13 +983,23 @@ L(du4_dox):
     bf      30,L(du4_1dw)
 
     /* there are at least two DWs to copy */
+#ifdef __LITTLE_ENDIAN__
+    srdi     0,6, 32
+    sldi     8,7, 64-32
+#else
     sldi     0,6, 32
     srdi     8,7, 64-32
+#endif
     or      0,0,8
     ld      6,16(5)
     std     0,0(4)
+#ifdef __LITTLE_ENDIAN__
+    srdi     0,7, 32
+    sldi     8,6, 64-32
+#else
     sldi     0,7, 32
     srdi     8,6, 64-32
+#endif
     or      0,0,8
     ld      7,24(5)
     std     0,8(4)
@@ -849,8 +1008,13 @@ L(du4_dox):
     blt     cr6,L(du4_fini)  /* if total DWs = 3, then bypass loop */
     bf      31,L(du4_loop)
     /* there is a third DW to copy */
+#ifdef __LITTLE_ENDIAN__
+    srdi     0,6, 32
+    sldi     8,7, 64-32
+#else
     sldi     0,6, 32
     srdi     8,7, 64-32
+#endif
     or      0,0,8
     std     0,0(4)
     mr      6,7
@@ -861,8 +1025,13 @@ L(du4_dox):
     b       L(du4_loop)
     .align 4
 L(du4_1dw):
+#ifdef __LITTLE_ENDIAN__
+    srdi     0,6, 32
+    sldi     8,7, 64-32
+#else
     sldi     0,6, 32
     srdi     8,7, 64-32
+#endif
     addi    5,5,16
     or      0,0,8
     bf      31,L(du4_loop)
@@ -874,23 +1043,43 @@ L(du4_1dw):
     .align 4
 /* copy 32 bytes at a time */
 L(du4_loop):
+#ifdef __LITTLE_ENDIAN__
+    srdi   0,6, 32
+    sldi   8,7, 64-32
+#else
     sldi   0,6, 32
     srdi   8,7, 64-32
+#endif
     or    0,0,8
     ld    6,0(5)
     std   0,0(4)
+#ifdef __LITTLE_ENDIAN__
+    srdi   0,7, 32
+    sldi   8,6, 64-32
+#else
     sldi   0,7, 32
     srdi   8,6, 64-32
+#endif
     or    0,0,8
     ld    7,8(5)
     std   0,8(4)
+#ifdef __LITTLE_ENDIAN__
+    srdi   0,6, 32
+    sldi   8,7, 64-32
+#else
     sldi   0,6, 32
     srdi   8,7, 64-32
+#endif
     or    0,0,8
     ld    6,16(5)
     std   0,16(4)
+#ifdef __LITTLE_ENDIAN__
+    srdi   0,7, 32
+    sldi   8,6, 64-32
+#else
     sldi   0,7, 32
     srdi   8,6, 64-32
+#endif
     or    0,0,8
     ld    7,24(5)
     std   0,24(4)
@@ -900,9 +1089,14 @@ L(du4_loop):
     .align 4
 L(du4_fini):
     /* calculate and store the final DW */
+#ifdef __LITTLE_ENDIAN__
+    srdi   0,6, 32
+    sldi   8,7, 64-32
+#else
     sldi   0,6, 32
     srdi   8,7, 64-32
-    or    0,0,8  
+#endif
+    or    0,0,8
     std   0,0(4)
     b     L(du_done)
 
@@ -911,13 +1105,23 @@ L(du5_do):
     bf      30,L(du5_1dw)
 
     /* there are at least two DWs to copy */
+#ifdef __LITTLE_ENDIAN__
+    srdi     0,6, 40
+    sldi     8,7, 64-40
+#else
     sldi     0,6, 40
     srdi     8,7, 64-40
+#endif
     or      0,0,8
     ld      6,16(5)
     std     0,0(4)
+#ifdef __LITTLE_ENDIAN__
+    srdi     0,7, 40
+    sldi     8,6, 64-40
+#else
     sldi     0,7, 40
     srdi     8,6, 64-40
+#endif
     or      0,0,8
     ld      7,24(5)
     std     0,8(4)
@@ -926,8 +1130,13 @@ L(du5_do):
     blt     cr6,L(du5_fini)  /* if total DWs = 3, then bypass loop */
     bf      31,L(du5_loop)
     /* there is a third DW to copy */
+#ifdef __LITTLE_ENDIAN__
+    srdi     0,6, 40
+    sldi     8,7, 64-40
+#else
     sldi     0,6, 40
     srdi     8,7, 64-40
+#endif
     or      0,0,8
     std     0,0(4)
     mr      6,7
@@ -938,8 +1147,13 @@ L(du5_do):
     b       L(du5_loop)
     .align 4
 L(du5_1dw):
+#ifdef __LITTLE_ENDIAN__
+    srdi     0,6, 40
+    sldi     8,7, 64-40
+#else
     sldi     0,6, 40
     srdi     8,7, 64-40
+#endif
     addi    5,5,16
     or      0,0,8
     bf      31,L(du5_loop)
@@ -951,23 +1165,43 @@ L(du5_1dw):
     .align 4
 /* copy 32 bytes at a time */
 L(du5_loop):
+#ifdef __LITTLE_ENDIAN__
+    srdi   0,6, 40
+    sldi   8,7, 64-40
+#else
     sldi   0,6, 40
     srdi   8,7, 64-40
+#endif
     or    0,0,8
     ld    6,0(5)
     std   0,0(4)
+#ifdef __LITTLE_ENDIAN__
+    srdi   0,7, 40
+    sldi   8,6, 64-40
+#else
     sldi   0,7, 40
     srdi   8,6, 64-40
+#endif
     or    0,0,8
     ld    7,8(5)
     std   0,8(4)
+#ifdef __LITTLE_ENDIAN__
+    srdi   0,6, 40
+    sldi   8,7, 64-40
+#else
     sldi   0,6, 40
     srdi   8,7, 64-40
+#endif
     or    0,0,8
     ld    6,16(5)
     std   0,16(4)
+#ifdef __LITTLE_ENDIAN__
+    srdi   0,7, 40
+    sldi   8,6, 64-40
+#else
     sldi   0,7, 40
     srdi   8,6, 64-40
+#endif
     or    0,0,8
     ld    7,24(5)
     std   0,24(4)
@@ -977,9 +1211,14 @@ L(du5_loop):
     .align 4
 L(du5_fini):
     /* calculate and store the final DW */
+#ifdef __LITTLE_ENDIAN__
+    srdi   0,6, 40
+    sldi   8,7, 64-40
+#else
     sldi   0,6, 40
     srdi   8,7, 64-40
-    or    0,0,8  
+#endif
+    or    0,0,8
     std   0,0(4)
     b     L(du_done)
 
@@ -988,13 +1227,23 @@ L(du6_do):
     bf      30,L(du6_1dw)
 
     /* there are at least two DWs to copy */
+#ifdef __LITTLE_ENDIAN__
+    srdi     0,6, 48
+    sldi     8,7, 64-48
+#else
     sldi     0,6, 48
     srdi     8,7, 64-48
+#endif
     or      0,0,8
     ld      6,16(5)
     std     0,0(4)
+#ifdef __LITTLE_ENDIAN__
+    srdi     0,7, 48
+    sldi     8,6, 64-48
+#else
     sldi     0,7, 48
     srdi     8,6, 64-48
+#endif
     or      0,0,8
     ld      7,24(5)
     std     0,8(4)
@@ -1003,8 +1252,13 @@ L(du6_do):
     blt     cr6,L(du6_fini)  /* if total DWs = 3, then bypass loop */
     bf      31,L(du6_loop)
     /* there is a third DW to copy */
+#ifdef __LITTLE_ENDIAN__
+    srdi     0,6, 48
+    sldi     8,7, 64-48
+#else
     sldi     0,6, 48
     srdi     8,7, 64-48
+#endif
     or      0,0,8
     std     0,0(4)
     mr      6,7
@@ -1015,8 +1269,13 @@ L(du6_do):
     b       L(du6_loop)
     .align 4
 L(du6_1dw):
+#ifdef __LITTLE_ENDIAN__
+    srdi     0,6, 48
+    sldi     8,7, 64-48
+#else
     sldi     0,6, 48
     srdi     8,7, 64-48
+#endif
     addi    5,5,16
     or      0,0,8
     bf      31,L(du6_loop)
@@ -1028,23 +1287,43 @@ L(du6_1dw):
     .align 4
 /* copy 32 bytes at a time */
 L(du6_loop):
+#ifdef __LITTLE_ENDIAN__
+    srdi   0,6, 48
+    sldi   8,7, 64-48
+#else
     sldi   0,6, 48
     srdi   8,7, 64-48
+#endif
     or    0,0,8
     ld    6,0(5)
     std   0,0(4)
+#ifdef __LITTLE_ENDIAN__
+    srdi   0,7, 48
+    sldi   8,6, 64-48
+#else
     sldi   0,7, 48
     srdi   8,6, 64-48
+#endif
     or    0,0,8
     ld    7,8(5)
     std   0,8(4)
+#ifdef __LITTLE_ENDIAN__
+    srdi   0,6, 48
+    sldi   8,7, 64-48
+#else
     sldi   0,6, 48
     srdi   8,7, 64-48
+#endif
     or    0,0,8
     ld    6,16(5)
     std   0,16(4)
+#ifdef __LITTLE_ENDIAN__
+    srdi   0,7, 48
+    sldi   8,6, 64-48
+#else
     sldi   0,7, 48
     srdi   8,6, 64-48
+#endif
     or    0,0,8
     ld    7,24(5)
     std   0,24(4)
@@ -1054,9 +1333,14 @@ L(du6_loop):
     .align 4
 L(du6_fini):
     /* calculate and store the final DW */
+#ifdef __LITTLE_ENDIAN__
+    srdi   0,6, 48
+    sldi   8,7, 64-48
+#else
     sldi   0,6, 48
     srdi   8,7, 64-48
-    or    0,0,8  
+#endif
+    or    0,0,8
     std   0,0(4)
     b     L(du_done)
 
@@ -1065,13 +1349,23 @@ L(du7_do):
     bf      30,L(du7_1dw)
 
     /* there are at least two DWs to copy */
+#ifdef __LITTLE_ENDIAN__
+    srdi     0,6, 56
+    sldi     8,7, 64-56
+#else
     sldi     0,6, 56
     srdi     8,7, 64-56
+#endif
     or      0,0,8
     ld      6,16(5)
     std     0,0(4)
+#ifdef __LITTLE_ENDIAN__
+    srdi     0,7, 56
+    sldi     8,6, 64-56
+#else
     sldi     0,7, 56
     srdi     8,6, 64-56
+#endif
     or      0,0,8
     ld      7,24(5)
     std     0,8(4)
@@ -1080,8 +1374,13 @@ L(du7_do):
     blt     cr6,L(du7_fini)  /* if total DWs = 3, then bypass loop */
     bf      31,L(du7_loop)
     /* there is a third DW to copy */
+#ifdef __LITTLE_ENDIAN__
+    srdi     0,6, 56
+    sldi     8,7, 64-56
+#else
     sldi     0,6, 56
     srdi     8,7, 64-56
+#endif
     or      0,0,8
     std     0,0(4)
     mr      6,7
@@ -1092,8 +1391,13 @@ L(du7_do):
     b       L(du7_loop)
     .align 4
 L(du7_1dw):
+#ifdef __LITTLE_ENDIAN__
+    srdi     0,6, 56
+    sldi     8,7, 64-56
+#else
     sldi     0,6, 56
     srdi     8,7, 64-56
+#endif
     addi    5,5,16
     or      0,0,8
     bf      31,L(du7_loop)
@@ -1105,23 +1409,43 @@ L(du7_1dw):
     .align 4
 /* copy 32 bytes at a time */
 L(du7_loop):
+#ifdef __LITTLE_ENDIAN__
+    srdi   0,6, 56
+    sldi   8,7, 64-56
+#else
     sldi   0,6, 56
     srdi   8,7, 64-56
+#endif
     or    0,0,8
     ld    6,0(5)
     std   0,0(4)
+#ifdef __LITTLE_ENDIAN__
+    srdi   0,7, 56
+    sldi   8,6, 64-56
+#else
     sldi   0,7, 56
     srdi   8,6, 64-56
+#endif
     or    0,0,8
     ld    7,8(5)
     std   0,8(4)
+#ifdef __LITTLE_ENDIAN__
+    srdi   0,6, 56
+    sldi   8,7, 64-56
+#else
     sldi   0,6, 56
     srdi   8,7, 64-56
+#endif
     or    0,0,8
     ld    6,16(5)
     std   0,16(4)
+#ifdef __LITTLE_ENDIAN__
+    srdi   0,7, 56
+    sldi   8,6, 64-56
+#else
     sldi   0,7, 56
     srdi   8,6, 64-56
+#endif
     or    0,0,8
     ld    7,24(5)
     std   0,24(4)
@@ -1131,9 +1455,14 @@ L(du7_loop):
     .align 4
 L(du7_fini):
     /* calculate and store the final DW */
+#ifdef __LITTLE_ENDIAN__
+    srdi   0,6, 56
+    sldi   8,7, 64-56
+#else
     sldi   0,6, 56
     srdi   8,7, 64-56
-    or    0,0,8  
+#endif
+    or    0,0,8
     std   0,0(4)
     b     L(du_done)
     
