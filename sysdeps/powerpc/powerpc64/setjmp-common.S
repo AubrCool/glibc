@@ -57,9 +57,10 @@ END (setjmp)
    HAVE_CLEANUP_JMP_BUF is defined.  */
 ENTRY (BP_SYM (__GI__setjmp))
 	std r2,40(r1)		/* Save the callers TOC in the save area.  */
-	cfi_endproc
-END_2 (BP_SYM (__GI__setjmp))
-/* Fall thru. */
+	CALL_MCOUNT 1
+	li r4,0			/* Set second argument to 0.  */
+	b JUMPTARGET (GLUE(__sigsetjmp,_ent))
+END (__GI__setjmp)
 #endif
 
 ENTRY (BP_SYM (_setjmp))
