@@ -33,12 +33,7 @@ struct ipc_kludge
 
 
 ssize_t
-__libc_msgrcv (msqid, msgp, msgsz, msgtyp, msgflg)
-     int msqid;
-     void *msgp;
-     size_t msgsz;
-     long int msgtyp;
-     int msgflg;
+__libc_msgrcv (int msqid, void *msgp, size_t msgsz, long int msgtyp, int msgflg)
 {
   /* The problem here is that Linux' calling convention only allows up to
      fives parameters to a system call.  */
@@ -47,16 +42,6 @@ __libc_msgrcv (msqid, msgp, msgsz, msgtyp, msgflg)
   tmp.msgp = msgp;
   tmp.msgtyp = msgtyp;
 
-  if (SINGLE_THREAD_P)
-    return INLINE_SYSCALL (ipc, 5, IPCOP_msgrcv, msqid, msgsz, msgflg, &tmp);
-
-  int oldtype = LIBC_CANCEL_ASYNC ();
-
-  ssize_t result = INLINE_SYSCALL (ipc, 5, IPCOP_msgrcv, msqid, msgsz, msgflg,
-				   &tmp);
-
-   LIBC_CANCEL_RESET (oldtype);
-
-  return result;
+  return SYSCALL_CANCEL (ipc, IPCOP_msgrcv, msqid, msgsz, msgflg, &tmp);
 }
 weak_alias (__libc_msgrcv, msgrcv)

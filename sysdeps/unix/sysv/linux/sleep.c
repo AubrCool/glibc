@@ -104,8 +104,6 @@ __sleep (unsigned int seconds)
 	 have to do anything here.  */
       if (oact.sa_handler == SIG_IGN)
 	{
-	  //__libc_cleanup_push (cl, &oset);
-
 	  /* We should leave SIGCHLD blocked.  */
 	  while (1)
 	    {
@@ -120,8 +118,6 @@ __sleep (unsigned int seconds)
 		  seconds -= (unsigned int) ts.tv_nsec;
 		}
 	    }
-
-	  //__libc_cleanup_pop (0);
 
 	  saved_errno = errno;
 	  /* Restore the original signal mask.  */

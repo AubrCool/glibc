@@ -23,10 +23,7 @@
 
 
 int
-pthread_sigmask (how, newmask, oldmask)
-     int how;
-     const sigset_t *newmask;
-     sigset_t *oldmask;
+__pthread_sigmask (int how, const sigset_t *newmask, sigset_t *oldmask)
 {
   sigset_t local_newmask;
 
@@ -55,3 +52,5 @@ pthread_sigmask (how, newmask, oldmask)
   return sigprocmask (how, newmask, oldmask) == -1 ? errno : 0;
 #endif
 }
+weak_alias (__pthread_sigmask, pthread_sigmask)
+hidden_def (__pthread_sigmask)

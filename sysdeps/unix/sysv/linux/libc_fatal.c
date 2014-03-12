@@ -17,6 +17,7 @@
    <http://www.gnu.org/licenses/>.  */
 
 #include <errno.h>
+#include <unistd.h>
 #include <execinfo.h>
 #include <fcntl.h>
 #include <not-cancel.h>

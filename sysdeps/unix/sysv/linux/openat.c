@@ -31,27 +31,6 @@
 #endif
 
 
-#define OPENAT_NOT_CANCEL CONCAT (OPENAT)
-#define CONCAT(name) CONCAT2 (name)
-#define CONCAT2(name) __##name##_nocancel
-
-
-int
-OPENAT_NOT_CANCEL (fd, file, oflag, mode)
-     int fd;
-     const char *file;
-     int oflag;
-     mode_t mode;
-{
-
-  /* We have to add the O_LARGEFILE flag for openat64.  */
-#ifdef MORE_OFLAGS
-  oflag |= MORE_OFLAGS;
-#endif
-
-  return INLINE_SYSCALL (openat, 4, fd, file, oflag, mode);
-}
-
 #define UNDERIZE(name) UNDERIZE_1 (name)
 #define UNDERIZE_1(name) __##name
 #define __OPENAT UNDERIZE (OPENAT)
@@ -61,10 +40,7 @@ OPENAT_NOT_CANCEL (fd, file, oflag, mode)
    the directory associated with FD.  If OFLAG includes O_CREAT, a
    third argument is the file protection.  */
 int
-__OPENAT (fd, file, oflag)
-     int fd;
-     const char *file;
-     int oflag;
+__OPENAT (int fd, const char *file, int oflag, ...)
 {
   mode_t mode = 0;
   if (oflag & O_CREAT)
@@ -75,16 +51,12 @@ __OPENAT (fd, file, oflag)
       va_end (arg);
     }
 
-  if (SINGLE_THREAD_P)
-    return OPENAT_NOT_CANCEL (fd, file, oflag, mode);
+  /* We have to add the O_LARGEFILE flag for openat64.  */
+#ifdef MORE_OFLAGS
+  oflag |= MORE_OFLAGS;
+#endif
 
-  int oldtype = LIBC_CANCEL_ASYNC ();
-
-  int res = OPENAT_NOT_CANCEL (fd, file, oflag, mode);
-
-  LIBC_CANCEL_RESET (oldtype);
-
-  return res;
+  return SYSCALL_CANCEL (openat, fd, file, oflag, mode);
 }
 libc_hidden_def (__OPENAT)
 weak_alias (__OPENAT, OPENAT)

@@ -155,16 +155,7 @@ __waitid (idtype, id, infop, options)
      siginfo_t *infop;
      int options;
 {
-  if (SINGLE_THREAD_P)
-    return do_waitid (idtype, id, infop, options);
-
-  int oldtype = LIBC_CANCEL_ASYNC ();
-
-  int result = do_waitid (idtype, id, infop, options);
-
-  LIBC_CANCEL_RESET (oldtype);
-
-  return result;
+  return do_waitid (idtype, id, infop, options);
 }
 weak_alias (__waitid, waitid)
 strong_alias (__waitid, __libc_waitid)

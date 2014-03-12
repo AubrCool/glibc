@@ -29,7 +29,6 @@
 
 struct _condvar_cleanup_buffer
 {
-  int oldtype;
   pthread_cond_t *cond;
   pthread_mutex_t *mutex;
   unsigned int bc_seq;
@@ -98,9 +97,7 @@ __condvar_cleanup (void *arg)
 
 
 int
-__pthread_cond_wait (cond, mutex)
-     pthread_cond_t *cond;
-     pthread_mutex_t *mutex;
+__pthread_cond_wait (pthread_cond_t *cond, pthread_mutex_t *mutex)
 {
   struct _pthread_cleanup_buffer buffer;
   struct _condvar_cleanup_buffer cbuffer;
@@ -159,10 +156,7 @@ __pthread_cond_wait (cond, mutex)
       /* Prepare to wait.  Release the condvar futex.  */
       lll_unlock (cond->__data.__lock, pshared);
 
-      /* Enable asynchronous cancellation.  Required by the standard.  */
-      cbuffer.oldtype = __pthread_enable_asynccancel ();
-
-#if (defined lll_futex_wait_requeue_pi \
+#if (defined lll_futex_timed_wait_bitset_cancel \
      && defined __ASSUME_REQUEUE_PI)
       /* If pi_flag remained 1 then it means that we had the lock and the mutex
 	 but a spurious waker raced ahead of us.  Give back the mutex before
@@ -176,19 +170,17 @@ __pthread_cond_wait (cond, mutex)
 
       if (pi_flag)
 	{
-	  err = lll_futex_wait_requeue_pi (&cond->__data.__futex,
-					   futex_val, &mutex->__data.__lock,
-					   pshared);
+	  err = lll_futex_wait_requeue_pi_cancel (&cond->__data.__futex,
+						  futex_val,
+						  &mutex->__data.__lock,
+						  pshared);
 
 	  pi_flag = (err == 0);
 	}
       else
 #endif
 	  /* Wait until woken by signal or broadcast.  */
-	lll_futex_wait (&cond->__data.__futex, futex_val, pshared);
-
-      /* Disable asynchronous cancellation.  */
-      __pthread_disable_asynccancel (cbuffer.oldtype);
+	lll_futex_wait_cancel (&cond->__data.__futex, futex_val, pshared);
 
       /* We are going to look at shared data again, so get the lock.  */
       lll_lock (cond->__data.__lock, pshared);

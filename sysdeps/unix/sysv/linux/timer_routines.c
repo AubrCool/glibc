@@ -84,14 +84,10 @@ timer_helper_thread (void *arg)
       /* sigwaitinfo cannot be used here, since it deletes
 	 SIGCANCEL == SIGTIMER from the set.  */
 
-      int oldtype = LIBC_CANCEL_ASYNC ();
-
       /* XXX The size argument hopefully will have to be changed to the
 	 real size of the user-level sigset_t.  */
-      int result = INLINE_SYSCALL (rt_sigtimedwait, 4, &ss, &si, NULL,
+      int result = SYSCALL_CANCEL (rt_sigtimedwait, &ss, &si, NULL,
 				   _NSIG / 8);
-
-      LIBC_CANCEL_RESET (oldtype);
 
       if (result > 0)
 	{

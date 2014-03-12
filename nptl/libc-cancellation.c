@@ -16,9 +16,53 @@
    License along with the GNU C Library; if not, see
    <http://www.gnu.org/licenses/>.  */
 
+#include <setjmp.h>
+#include <stdlib.h>
 #include "pthreadP.h"
 
+#ifdef IS_IN_rtld
 
-#define __pthread_enable_asynccancel __libc_enable_asynccancel
-#define __pthread_disable_asynccancel __libc_disable_asynccancel
-#include <nptl/cancellation.c>
+long int
+__syscall_cancel (long int nr, long int arg1, long int arg2, long int arg3,
+		  long int arg4, long int arg5, long int arg6)
+{
+  INTERNAL_SYSCALL_DECL (err);
+  return INTERNAL_SYSCALL_NCS (nr, err, 6, arg1, arg2, arg3, arg4, arg5, arg6);
+}
+
+#else
+
+long int
+__syscall_cancel (long int nr, long int a1, long int a2, long int a3,
+		  long int a4, long int a5, long int a6)
+{
+  pthread_t self = (pthread_t) THREAD_SELF;
+  volatile struct pthread *pd = (volatile struct pthread *) self;
+  long int result;
+
+  if (pd->cancelhandling & CANCELSTATE_BITMASK)
+    {
+      INTERNAL_SYSCALL_DECL (err);
+      result = INTERNAL_SYSCALL_NCS (nr, err, 6, a1, a2, a3, a4, a5, a6);
+      return INTERNAL_SYSCALL_ERROR_P (result, err) ? -result : result;
+    }
+
+  result = __syscall_cancel_arch (&pd->cancelhandling, nr, a1, a2, a3, a4, a5,
+			          a6);
+
+  if ((result == -EINTR)
+      && (pd->cancelhandling & CANCELED_BITMASK)
+      && !(pd->cancelhandling & CANCELSTATE_BITMASK))
+    __do_cancel ();
+
+  return result;
+}
+libc_hidden_def (__syscall_cancel)
+
+void
+__syscall_do_cancel (void)
+{
+  __do_cancel ();
+}
+
+#endif

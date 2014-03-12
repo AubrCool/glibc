@@ -51,7 +51,7 @@ do_sigtimedwait (const sigset_t *set, siginfo_t *info,
 
     /* XXX The size argument hopefully will have to be changed to the
        real size of the user-level sigset_t.  */
-  int result = INLINE_SYSCALL (rt_sigtimedwait, 4, set,
+  int result = SYSCALL_CANCEL (rt_sigtimedwait, set,
 			       info, timeout, _NSIG / 8);
 
   /* The kernel generates a SI_TKILL code in si_code in case tkill is
@@ -72,18 +72,8 @@ __sigtimedwait (set, info, timeout)
      siginfo_t *info;
      const struct timespec *timeout;
 {
-  if (SINGLE_THREAD_P)
-    return do_sigtimedwait (set, info, timeout);
+  return do_sigtimedwait (set, info, timeout);
 
-  int oldtype = LIBC_CANCEL_ASYNC ();
-
-  /* XXX The size argument hopefully will have to be changed to the
-     real size of the user-level sigset_t.  */
-  int result = do_sigtimedwait (set, info, timeout);
-
-  LIBC_CANCEL_RESET (oldtype);
-
-  return result;
 }
 libc_hidden_def (__sigtimedwait)
 weak_alias (__sigtimedwait, sigtimedwait)

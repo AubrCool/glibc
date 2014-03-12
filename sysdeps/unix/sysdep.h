@@ -20,9 +20,61 @@
 #include <sys/syscall.h>
 #define	HAVE_SYSCALLS
 
-/* Note that using a `PASTE' macro loses.  */
+#ifndef __ASSEMBLER__
+# include <errno.h>
+
 #define	SYSCALL__(name, args)	PSEUDO (__##name, name, args)
 #define	SYSCALL(name, args)	PSEUDO (name, name, args)
+
+#define __SSC(__x) ((long int) (__x))
+#define __SYSCALL_CANCEL0(__n) \
+  (__syscall_cancel)(__n, 0, 0, 0, 0, 0, 0)
+#define __SYSCALL_CANCEL1(__n, __a) \
+  (__syscall_cancel)(__n, __SSC(__a), 0, 0, 0, 0, 0)
+#define __SYSCALL_CANCEL2(__n, __a, __b) \
+  (__syscall_cancel)(__n, __SSC(__a), __SSC(__b), 0, 0, 0, 0)
+#define __SYSCALL_CANCEL3(__n, __a, __b, __c) \
+  (__syscall_cancel)(__n, __SSC(__a), __SSC(__b), __SSC(__c), 0, 0, 0)
+#define __SYSCALL_CANCEL4(__n, __a, __b, __c, __d) \
+  (__syscall_cancel)(__n, __SSC(__a), __SSC(__b), __SSC(__c), __SSC(__d), \
+		     0, 0)
+#define __SYSCALL_CANCEL5(__n, __a, __b, __c, __d, __e) \
+  (__syscall_cancel)(__n, __SSC(__a), __SSC(__b), __SSC(__c), __SSC(__d), \
+		     __SSC(__e), 0)
+#define __SYSCALL_CANCEL6(__n, __a, __b, __c, __d, __e, __f) \
+  (__syscall_cancel)(__n, __SSC(__a), __SSC(__b), __SSC(__c), __SSC(__d), \
+		     __SSC(__e), __SSC(__f))
+
+#define __SYSCALL_NARGS_X(a,b,c,d,e,f,g,h,n,...) n
+#define __SYSCALL_NARGS(...) \
+  __SYSCALL_NARGS_X (__VA_ARGS__, 7, 6, 5, 4, 3, 2, 1, 0,)
+#define __SYSCALL_CONCAT_X(__a,__b)	__a##__b
+#define __SYSCALL_CONCAT(__a,__b)	__SYSCALL_CONCAT_X (__a, __b)
+#define __SYSCALL_DISP(__b,...) \
+  __SYSCALL_CONCAT (__b,__SYSCALL_NARGS(__VA_ARGS__))(__VA_ARGS__)
+
+#define __SYSCALL_CANCEL(...) __SYSCALL_DISP (__SYSCALL_CANCEL, __VA_ARGS__)
+
+#define SYSCALL_CANCEL_NCS(name, nr, args...)				\
+  __SYSCALL_CANCEL (__NR_##name, nr, args)
+
+#define SYSCALL_CANCEL(name, args...)					\
+  ({									\
+    long int sc_ret = SYSCALL_CANCEL_NCS (name, args);			\
+    if (SYSCALL_CANCEL_ERROR (sc_ret))					\
+      {									\
+        __set_errno (SYSCALL_CANCEL_ERRNO (sc_ret));			\
+        sc_ret = -1L;							\
+      }									\
+    sc_ret;								\
+  })
+
+long int __syscall_cancel (long int nr, long int arg1, long int arg2, long int arg3,
+		           long int arg4, long int arg5, long int arg6);
+libc_hidden_proto (__syscall_cancel);
+
+#endif
+
 
 /* Machine-dependent sysdep.h files are expected to define the macro
    PSEUDO (function_name, syscall_name) to emit assembly code to define the

@@ -23,8 +23,7 @@
 
 #include <sys/syscall.h>
 
-
-#ifndef NO_CANCELLATION
+#ifndef IS_IN_rtld
 int
 __fcntl_nocancel (int fd, int cmd, ...)
 {
@@ -39,7 +38,6 @@ __fcntl_nocancel (int fd, int cmd, ...)
 }
 #endif
 
-
 int
 __libc_fcntl (int fd, int cmd, ...)
 {
@@ -53,16 +51,7 @@ __libc_fcntl (int fd, int cmd, ...)
   if (cmd >= F_GETLK64 && cmd <= F_SETLKW64)
     cmd -= F_GETLK64 - F_GETLK;
 
-  if (SINGLE_THREAD_P || cmd != F_SETLKW)
-    return INLINE_SYSCALL (fcntl, 3, fd, cmd, arg);
-
-  int oldtype = LIBC_CANCEL_ASYNC ();
-
-  int result = INLINE_SYSCALL (fcntl, 3, fd, cmd, arg);
-
-  LIBC_CANCEL_RESET (oldtype);
-
-  return result;
+  return SYSCALL_CANCEL (fcntl, fd, cmd, arg);
 }
 libc_hidden_def (__libc_fcntl)
 

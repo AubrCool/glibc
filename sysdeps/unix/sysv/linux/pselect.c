@@ -63,23 +63,12 @@ __pselect (int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds,
 
 #ifndef CALL_PSELECT6
 # define CALL_PSELECT6(nfds, readfds, writefds, exceptfds, timeout, data) \
-  INLINE_SYSCALL (pselect6, 6, nfds, readfds, writefds, exceptfds,	      \
+  SYSCALL_CANCEL (pselect6, nfds, readfds, writefds, exceptfds,	      \
 		  timeout, data)
 #endif
 
-  if (SINGLE_THREAD_P)
-    result = CALL_PSELECT6 (nfds, readfds, writefds, exceptfds, timeout,
-			    &data);
-  else
-    {
-      int oldtype = LIBC_CANCEL_ASYNC ();
-
-      result = CALL_PSELECT6 (nfds, readfds, writefds, exceptfds, timeout,
-			      &data);
-
-      LIBC_CANCEL_RESET (oldtype);
-    }
-
+  result = CALL_PSELECT6 (nfds, readfds, writefds, exceptfds, timeout,
+			  &data);
 # ifndef __ASSUME_PSELECT
   if (result == -1 && errno == ENOSYS)
     result = __generic_pselect (nfds, readfds, writefds, exceptfds, timeout,

@@ -52,7 +52,7 @@ do_sigwaitinfo (const sigset_t *set, siginfo_t *info)
 
   /* XXX The size argument hopefully will have to be changed to the
      real size of the user-level sigset_t.  */
-  int result = INLINE_SYSCALL (rt_sigtimedwait, 4, set,
+  int result = SYSCALL_CANCEL (rt_sigtimedwait, set,
 			       info, NULL, _NSIG / 8);
 
   /* The kernel generates a SI_TKILL code in si_code in case tkill is
@@ -72,18 +72,7 @@ __sigwaitinfo (set, info)
      const sigset_t *set;
      siginfo_t *info;
 {
-  if (SINGLE_THREAD_P)
-    return do_sigwaitinfo (set, info);
-
-  int oldtype = LIBC_CANCEL_ASYNC ();
-
-  /* XXX The size argument hopefully will have to be changed to the
-     real size of the user-level sigset_t.  */
-  int result = do_sigwaitinfo (set, info);
-
-  LIBC_CANCEL_RESET (oldtype);
-
-  return result;
+  return do_sigwaitinfo (set, info);
 }
 libc_hidden_def (__sigwaitinfo)
 weak_alias (__sigwaitinfo, sigwaitinfo)
