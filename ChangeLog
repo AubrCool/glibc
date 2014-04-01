@@ -1,5 +1,8 @@
 2013-12-04  Alan Modra  <amodra@gmail.com>
 
+	[BZ #16786]
+	* sysdeps/powerpc/powerpc64/fpu/s_copysign.S: Don't trash stack.
+
 	* elf/elf.h (R_PPC64_TLSGD, R_PPC64_TLSLD, R_PPC64_TOCSAVE): Define.
 	(R_PPC64_ADDR16_HIGH, R_PPC64_ADDR16_HIGHA): Likewise.
 	(R_PPC64_TPREL16_HIGH, R_PPC64_TPREL16_HIGHA): Likewise.
