@@ -1,5 +1,7 @@
 2013-12-04  Alan Modra  <amodra@gmail.com>
 
+	* sysdeps/powerpc/powerpc64/start.S: Add @toc to toc symbol reference.
+
 	[BZ #16786]
 	* sysdeps/powerpc/powerpc64/fpu/s_copysign.S: Don't trash stack.
 
