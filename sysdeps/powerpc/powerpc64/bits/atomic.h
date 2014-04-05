@@ -17,6 +17,8 @@
    License along with the GNU C Library; if not, see
    <http://www.gnu.org/licenses/>.  */
 
+#include <tls.h>
+
 /*  POWER6 adds a "Mutex Hint" to the Load and Reserve instruction.
     This is a hint to the hardware to expect additional updates adjacent
     to the lock word or not.  If we are acquiring a Mutex, the hint
@@ -36,6 +38,15 @@
 #define __HAVE_64B_ATOMICS 1
 #define USE_ATOMIC_COMPILER_BUILTINS 0
 
+/* Check if the process has created a thread.  The lock optimization is only
+   for locks within libc.so.  */
+#ifndef NOT_IN_libc
+# define SINGLE_THREAD_P	\
+  (THREAD_GETMEM (THREAD_SELF, header.multiple_threads) == 0)
+#else
+# define SINGLE_THREAD_P   0
+#endif
+
 /* The 32-bit exchange_bool is different on powerpc64 because the subf
    does signed 64-bit arithmetic while the lwarx is 32-bit unsigned
    (a load word and zero (high 32) form) load.
@@ -45,7 +56,8 @@
 #define __arch_compare_and_exchange_bool_32_acq(mem, newval, oldval) \
 ({									      \
   unsigned int __tmp, __tmp2;						      \
-  __asm __volatile ("   clrldi  %1,%1,32\n"				      \
+  if (!SINGLE_THREAD_P)							      \
+    __asm __volatile ("   clrldi  %1,%1,32\n"				      \
 		    "1:	lwarx	%0,0,%2" MUTEX_HINT_ACQ "\n"	 	      \
 		    "	subf.	%0,%1,%0\n"				      \
 		    "	bne	2f\n"					      \
@@ -55,13 +67,20 @@
 		    : "=&r" (__tmp), "=r" (__tmp2)			      \
 		    : "b" (mem), "1" (oldval), "r" (newval)		      \
 		    : "cr0", "memory");					      \
+  else									      \
+    {									      \
+      __tmp = !(*mem == oldval);					      \
+      if (!__tmp)							      \
+	*mem = newval;							      \
+    }									      \
   __tmp != 0;								      \
 })
 
 #define __arch_compare_and_exchange_bool_32_rel(mem, newval, oldval) \
 ({									      \
   unsigned int __tmp, __tmp2;						      \
-  __asm __volatile (__ARCH_REL_INSTR "\n"				      \
+  if (!SINGLE_THREAD_P)							      \
+    __asm __volatile (__ARCH_REL_INSTR "\n"				      \
 		    "   clrldi  %1,%1,32\n"				      \
 		    "1:	lwarx	%0,0,%2" MUTEX_HINT_REL "\n"		      \
 		    "	subf.	%0,%1,%0\n"				      \
@@ -72,6 +91,12 @@
 		    : "=&r" (__tmp), "=r" (__tmp2)			      \
 		    : "b" (mem), "1" (oldval), "r" (newval)		      \
 		    : "cr0", "memory");					      \
+  else									      \
+    {									      \
+      __tmp = !(*mem == oldval);					      \
+      if (!__tmp)							      \
+	*mem = newval;							      \
+    }									      \
   __tmp != 0;								      \
 })
 
@@ -83,7 +108,8 @@
 #define __arch_compare_and_exchange_bool_64_acq(mem, newval, oldval) \
 ({									      \
   unsigned long	__tmp;							      \
-  __asm __volatile (							      \
+  if (!SINGLE_THREAD_P)							      \
+    __asm __volatile (							      \
 		    "1:	ldarx	%0,0,%1" MUTEX_HINT_ACQ "\n"		      \
 		    "	subf.	%0,%2,%0\n"				      \
 		    "	bne	2f\n"					      \
@@ -93,13 +119,20 @@
 		    : "=&r" (__tmp)					      \
 		    : "b" (mem), "r" (oldval), "r" (newval)		      \
 		    : "cr0", "memory");					      \
+  else									      \
+    {									      \
+      __tmp = !(*mem == oldval);					      \
+      if (!__tmp)							      \
+	*mem = newval;							      \
+    }									      \
   __tmp != 0;								      \
 })
 
 #define __arch_compare_and_exchange_bool_64_rel(mem, newval, oldval) \
 ({									      \
   unsigned long	__tmp;							      \
-  __asm __volatile (__ARCH_REL_INSTR "\n"				      \
+  if (!SINGLE_THREAD_P)							      \
+    __asm __volatile (__ARCH_REL_INSTR "\n"				      \
 		    "1:	ldarx	%0,0,%1" MUTEX_HINT_REL "\n"		      \
 		    "	subf.	%0,%2,%0\n"				      \
 		    "	bne	2f\n"					      \
@@ -109,6 +142,12 @@
 		    : "=&r" (__tmp)					      \
 		    : "b" (mem), "r" (oldval), "r" (newval)		      \
 		    : "cr0", "memory");					      \
+  else									      \
+    {									      \
+      __tmp = !(*mem == oldval);					      \
+      if (!__tmp)							      \
+	*mem = newval;							      \
+    }									      \
   __tmp != 0;								      \
 })
 
@@ -116,7 +155,8 @@
   ({									      \
       __typeof (*(mem)) __tmp;						      \
       __typeof (mem)  __memp = (mem);					      \
-      __asm __volatile (						      \
+      if (!SINGLE_THREAD_P)						      \
+        __asm __volatile (						      \
 		        "1:	ldarx	%0,0,%1" MUTEX_HINT_ACQ "\n"	      \
 		        "	cmpd	%0,%2\n"			      \
 		        "	bne	2f\n"				      \
@@ -126,6 +166,12 @@
 		        : "=&r" (__tmp)					      \
 		        : "b" (__memp), "r" (oldval), "r" (newval)	      \
 		        : "cr0", "memory");				      \
+      else								      \
+        {								      \
+          __tmp = *__memp;						      \
+          if (__tmp == oldval)						      \
+	    *__memp = newval;						      \
+        }								      \
       __tmp;								      \
   })
 
@@ -133,7 +179,8 @@
   ({									      \
       __typeof (*(mem)) __tmp;						      \
       __typeof (mem)  __memp = (mem);					      \
-      __asm __volatile (__ARCH_REL_INSTR "\n"				      \
+      if (!SINGLE_THREAD_P)						      \
+        __asm __volatile (__ARCH_REL_INSTR "\n"				      \
 		        "1:	ldarx	%0,0,%1" MUTEX_HINT_REL "\n"	      \
 		        "	cmpd	%0,%2\n"			      \
 		        "	bne	2f\n"				      \
@@ -143,13 +190,20 @@
 		        : "=&r" (__tmp)					      \
 		        : "b" (__memp), "r" (oldval), "r" (newval)	      \
 		        : "cr0", "memory");				      \
+      else								      \
+        {								      \
+          __tmp = *__memp;						      \
+          if (__tmp == oldval)						      \
+	    *__memp = newval;						      \
+        }								      \
       __tmp;								      \
   })
 
 #define __arch_atomic_exchange_64_acq(mem, value) \
     ({									      \
       __typeof (*mem) __val;						      \
-      __asm __volatile (__ARCH_REL_INSTR "\n"				      \
+      if (!SINGLE_THREAD_P)						      \
+        __asm __volatile (__ARCH_REL_INSTR "\n"				      \
 			"1:	ldarx	%0,0,%2" MUTEX_HINT_ACQ "\n"	      \
 			"	stdcx.	%3,0,%2\n"			      \
 			"	bne-	1b\n"				      \
@@ -157,32 +211,49 @@
 			: "=&r" (__val), "=m" (*mem)			      \
 			: "b" (mem), "r" (value), "m" (*mem)		      \
 			: "cr0", "memory");				      \
+      else								      \
+	{								      \
+	  __val = *mem;							      \
+	  *mem = value;							      \
+	}								      \
       __val;								      \
     })
 
 #define __arch_atomic_exchange_64_rel(mem, value) \
     ({									      \
       __typeof (*mem) __val;						      \
-      __asm __volatile (__ARCH_REL_INSTR "\n"				      \
+      if (!SINGLE_THREAD_P)						      \
+        __asm __volatile (__ARCH_REL_INSTR "\n"				      \
 			"1:	ldarx	%0,0,%2" MUTEX_HINT_REL "\n"	      \
 			"	stdcx.	%3,0,%2\n"			      \
 			"	bne-	1b"				      \
 			: "=&r" (__val), "=m" (*mem)			      \
 			: "b" (mem), "r" (value), "m" (*mem)		      \
 			: "cr0", "memory");				      \
+      else								      \
+	{								      \
+	  __val = *mem;							      \
+	  *mem = value;							      \
+	}								      \
       __val;								      \
     })
 
 #define __arch_atomic_exchange_and_add_64(mem, value) \
     ({									      \
       __typeof (*mem) __val, __tmp;					      \
-      __asm __volatile ("1:	ldarx	%0,0,%3\n"			      \
+      if (!SINGLE_THREAD_P)						      \
+        __asm __volatile ("1:	ldarx	%0,0,%3\n"			      \
 			"	add	%1,%0,%4\n"			      \
 			"	stdcx.	%1,0,%3\n"			      \
 			"	bne-	1b"				      \
 			: "=&b" (__val), "=&r" (__tmp), "=m" (*mem)	      \
 			: "b" (mem), "r" (value), "m" (*mem)		      \
 			: "cr0", "memory");				      \
+      else								      \
+	{								      \
+	  __val = *mem;							      \
+	  *mem += value;						      \
+	}								      \
       __val;								      \
     })
 
@@ -217,32 +288,39 @@
 #define __arch_atomic_increment_val_64(mem) \
     ({									      \
       __typeof (*(mem)) __val;						      \
-      __asm __volatile ("1:	ldarx	%0,0,%2\n"			      \
+      if (!SINGLE_THREAD_P)						      \
+        __asm __volatile ("1:	ldarx	%0,0,%2\n"			      \
 			"	addi	%0,%0,1\n"			      \
 			"	stdcx.	%0,0,%2\n"			      \
 			"	bne-	1b"				      \
 			: "=&b" (__val), "=m" (*mem)			      \
 			: "b" (mem), "m" (*mem)				      \
 			: "cr0", "memory");				      \
+      else								      \
+        __val = ++(*mem);						      \
       __val;								      \
     })
 
 #define __arch_atomic_decrement_val_64(mem) \
     ({									      \
       __typeof (*(mem)) __val;						      \
-      __asm __volatile ("1:	ldarx	%0,0,%2\n"			      \
+      if (!SINGLE_THREAD_P)						      \
+        __asm __volatile ("1:	ldarx	%0,0,%2\n"			      \
 			"	subi	%0,%0,1\n"			      \
 			"	stdcx.	%0,0,%2\n"			      \
 			"	bne-	1b"				      \
 			: "=&b" (__val), "=m" (*mem)			      \
 			: "b" (mem), "m" (*mem)				      \
 			: "cr0", "memory");				      \
+      else								      \
+        __val = --(*mem);						      \
       __val;								      \
     })
 
 #define __arch_atomic_decrement_if_positive_64(mem) \
   ({ int __val, __tmp;							      \
-     __asm __volatile ("1:	ldarx	%0,0,%3\n"			      \
+     if (!SINGLE_THREAD_P)						      \
+       __asm __volatile ("1:	ldarx	%0,0,%3\n"			      \
 		       "	cmpdi	0,%0,0\n"			      \
 		       "	addi	%1,%0,-1\n"			      \
 		       "	ble	2f\n"				      \
@@ -252,6 +330,12 @@
 		       : "=&b" (__val), "=&r" (__tmp), "=m" (*mem)	      \
 		       : "b" (mem), "m" (*mem)				      \
 		       : "cr0", "memory");				      \
+     else								      \
+       {								      \
+	 __val = (*mem);						      \
+	 if (__val > 0)							      \
+	    --(*mem);						      	      \
+       }								      \
      __val;								      \
   })
 

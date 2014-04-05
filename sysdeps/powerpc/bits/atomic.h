@@ -76,13 +76,18 @@ typedef uintmax_t uatomic_max_t;
 # define MUTEX_HINT_REL
 #endif
 
+/* Note: SINGLE_THREAD_P is defined either in
+   sysdeps/powerpc/powerpc64/bits/atomic.h or
+   sysdeps/powerpc/powerpc32/bits/atomic.h  */
+
 #define atomic_full_barrier()	__asm ("sync" ::: "memory")
 
 #define __arch_compare_and_exchange_val_32_acq(mem, newval, oldval)	      \
   ({									      \
       __typeof (*(mem)) __tmp;						      \
       __typeof (mem)  __memp = (mem);					      \
-      __asm __volatile (						      \
+      if (!SINGLE_THREAD_P)						      \
+        __asm __volatile (						      \
 		        "1:	lwarx	%0,0,%1" MUTEX_HINT_ACQ "\n"	      \
 		        "	cmpw	%0,%2\n"			      \
 		        "	bne	2f\n"				      \
@@ -92,6 +97,12 @@ typedef uintmax_t uatomic_max_t;
 		        : "=&r" (__tmp)					      \
 		        : "b" (__memp), "r" (oldval), "r" (newval)	      \
 		        : "cr0", "memory");				      \
+      else								      \
+	{								      \
+	  __tmp = *__memp;				   		      \
+	  if (__tmp == oldval)					      	      \
+	    *__memp = newval;						      \
+	}								      \
       __tmp;								      \
   })
 
@@ -99,7 +110,8 @@ typedef uintmax_t uatomic_max_t;
   ({									      \
       __typeof (*(mem)) __tmp;						      \
       __typeof (mem)  __memp = (mem);					      \
-      __asm __volatile (__ARCH_REL_INSTR "\n"				      \
+      if (!SINGLE_THREAD_P)						      \
+        __asm __volatile (__ARCH_REL_INSTR "\n"				      \
 		        "1:	lwarx	%0,0,%1" MUTEX_HINT_REL "\n"	      \
 		        "	cmpw	%0,%2\n"			      \
 		        "	bne	2f\n"				      \
@@ -109,13 +121,20 @@ typedef uintmax_t uatomic_max_t;
 		        : "=&r" (__tmp)					      \
 		        : "b" (__memp), "r" (oldval), "r" (newval)	      \
 		        : "cr0", "memory");				      \
+      else								      \
+	{								      \
+	  __tmp = *__memp;				   		      \
+	  if (__tmp == oldval)					      	      \
+	    *__memp = newval;						      \
+	}								      \
       __tmp;								      \
   })
 
 #define __arch_atomic_exchange_32_acq(mem, value)			      \
   ({									      \
     __typeof (*mem) __val;						      \
-    __asm __volatile (							      \
+    if (!SINGLE_THREAD_P)						      \
+      __asm __volatile (						      \
 		      "1:	lwarx	%0,0,%2" MUTEX_HINT_ACQ "\n"	      \
 		      "		stwcx.	%3,0,%2\n"			      \
 		      "		bne-	1b\n"				      \
@@ -123,32 +142,50 @@ typedef uintmax_t uatomic_max_t;
 		      : "=&r" (__val), "=m" (*mem)			      \
 		      : "b" (mem), "r" (value), "m" (*mem)		      \
 		      : "cr0", "memory");				      \
+    else								      \
+      {									      \
+	__val = *mem;							      \
+	*mem = value;							      \
+      }									      \
     __val;								      \
   })
 
 #define __arch_atomic_exchange_32_rel(mem, value) \
   ({									      \
     __typeof (*mem) __val;						      \
-    __asm __volatile (__ARCH_REL_INSTR "\n"				      \
+    if (!SINGLE_THREAD_P)						      \
+      __asm __volatile (__ARCH_REL_INSTR "\n"				      \
 		      "1:	lwarx	%0,0,%2" MUTEX_HINT_REL "\n"	      \
 		      "		stwcx.	%3,0,%2\n"			      \
 		      "		bne-	1b"				      \
 		      : "=&r" (__val), "=m" (*mem)			      \
 		      : "b" (mem), "r" (value), "m" (*mem)		      \
 		      : "cr0", "memory");				      \
+    else								      \
+      {									      \
+	__val = *mem;							      \
+	*mem = value;							      \
+      }									      \
     __val;								      \
   })
 
 #define __arch_atomic_exchange_and_add_32(mem, value) \
   ({									      \
     __typeof (*mem) __val, __tmp;					      \
-    __asm __volatile ("1:	lwarx	%0,0,%3\n"			      \
+    if (!SINGLE_THREAD_P)						      \
+      __asm __volatile (						      \
+		      "1:	lwarx	%0,0,%3\n"			      \
 		      "		add	%1,%0,%4\n"			      \
 		      "		stwcx.	%1,0,%3\n"			      \
 		      "		bne-	1b"				      \
 		      : "=&b" (__val), "=&r" (__tmp), "=m" (*mem)	      \
 		      : "b" (mem), "r" (value), "m" (*mem)		      \
 		      : "cr0", "memory");				      \
+    else								      \
+      {									      \
+	__val = *mem;							      \
+	*mem += value;							      \
+      }									      \
     __val;								      \
   })
 
@@ -183,32 +220,42 @@ typedef uintmax_t uatomic_max_t;
 #define __arch_atomic_increment_val_32(mem) \
   ({									      \
     __typeof (*(mem)) __val;						      \
-    __asm __volatile ("1:	lwarx	%0,0,%2\n"			      \
+    if (!SINGLE_THREAD_P)						      \
+      __asm __volatile (						      \
+		      "1:	lwarx	%0,0,%2\n"			      \
 		      "		addi	%0,%0,1\n"			      \
 		      "		stwcx.	%0,0,%2\n"			      \
 		      "		bne-	1b"				      \
 		      : "=&b" (__val), "=m" (*mem)			      \
 		      : "b" (mem), "m" (*mem)				      \
 		      : "cr0", "memory");				      \
+    else								      \
+      __val = ++(*mem);							      \
     __val;								      \
   })
 
 #define __arch_atomic_decrement_val_32(mem) \
   ({									      \
     __typeof (*(mem)) __val;						      \
-    __asm __volatile ("1:	lwarx	%0,0,%2\n"			      \
+    if (!SINGLE_THREAD_P)						      \
+      __asm __volatile (						      \
+		      "1:	lwarx	%0,0,%2\n"			      \
 		      "		subi	%0,%0,1\n"			      \
 		      "		stwcx.	%0,0,%2\n"			      \
 		      "		bne-	1b"				      \
 		      : "=&b" (__val), "=m" (*mem)			      \
 		      : "b" (mem), "m" (*mem)				      \
 		      : "cr0", "memory");				      \
+    else								      \
+      __val = --(*mem);							      \
     __val;								      \
   })
 
 #define __arch_atomic_decrement_if_positive_32(mem) \
   ({ int __val, __tmp;							      \
-     __asm __volatile ("1:	lwarx	%0,0,%3\n"			      \
+     if (!SINGLE_THREAD_P)						      \
+       __asm __volatile (						      \
+		       "1:	lwarx	%0,0,%3\n"			      \
 		       "	cmpwi	0,%0,0\n"			      \
 		       "	addi	%1,%0,-1\n"			      \
 		       "	ble	2f\n"				      \
@@ -218,6 +265,12 @@ typedef uintmax_t uatomic_max_t;
 		       : "=&b" (__val), "=&r" (__tmp), "=m" (*mem)	      \
 		       : "b" (mem), "m" (*mem)				      \
 		       : "cr0", "memory");				      \
+     else								      \
+       {								      \
+	 __val = (*mem);						      \
+	 if (__val > 0)							      \
+	    --(*mem);						      	      \
+       }								      \
      __val;								      \
   })
 

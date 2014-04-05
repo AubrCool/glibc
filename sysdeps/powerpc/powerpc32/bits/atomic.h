@@ -17,6 +17,8 @@
    License along with the GNU C Library; if not, see
    <http://www.gnu.org/licenses/>.  */
 
+#include <tls.h>
+
 /*  POWER6 adds a "Mutex Hint" to the Load and Reserve instruction.
     This is a hint to the hardware to expect additional updates adjacent
     to the lock word or not.  If we are acquiring a Mutex, the hint
@@ -36,6 +38,14 @@
 #define __HAVE_64B_ATOMICS 0
 #define USE_ATOMIC_COMPILER_BUILTINS 0
 
+/* Check if the process has created a thread.  */
+#ifndef NOT_IN_libc
+# define SINGLE_THREAD_P \
+  (THREAD_GETMEM (THREAD_SELF, header.multiple_threads) == 0)
+#else
+# define SINGLE_THREAD_P   0
+#endif
+
 /*
  * The 32-bit exchange_bool is different on powerpc64 because the subf
  * does signed 64-bit arithmetic while the lwarx is 32-bit unsigned
@@ -45,7 +55,8 @@
 #define __arch_compare_and_exchange_bool_32_acq(mem, newval, oldval)         \
 ({									      \
   unsigned int __tmp;							      \
-  __asm __volatile (							      \
+  if (!SINGLE_THREAD_P)							      \
+    __asm __volatile (							      \
 		    "1:	lwarx	%0,0,%1" MUTEX_HINT_ACQ "\n"		      \
 		    "	subf.	%0,%2,%0\n"				      \
 		    "	bne	2f\n"					      \
@@ -55,13 +66,20 @@
 		    : "=&r" (__tmp)					      \
 		    : "b" (mem), "r" (oldval), "r" (newval)		      \
 		    : "cr0", "memory");					      \
+  else									      \
+    {									      \
+      __tmp = !(*mem == oldval);					      \
+      if (!__tmp)							      \
+	*mem = newval;							      \
+    }									      \
   __tmp != 0;								      \
 })
 
 #define __arch_compare_and_exchange_bool_32_rel(mem, newval, oldval)	      \
 ({									      \
   unsigned int __tmp;							      \
-  __asm __volatile (__ARCH_REL_INSTR "\n"				      \
+  if (!SINGLE_THREAD_P)							      \
+    __asm __volatile (__ARCH_REL_INSTR "\n"				      \
 		    "1:	lwarx	%0,0,%1" MUTEX_HINT_REL "\n"		      \
 		    "	subf.	%0,%2,%0\n"				      \
 		    "	bne	2f\n"					      \
@@ -71,6 +89,12 @@
 		    : "=&r" (__tmp)					      \
 		    : "b" (mem), "r" (oldval), "r" (newval)		      \
 		    : "cr0", "memory");					      \
+  else									      \
+    {									      \
+      __tmp = !(*mem == oldval);					      \
+      if (!__tmp)							      \
+	*mem = newval;							      \
+    }									      \
   __tmp != 0;								      \
 })
 
