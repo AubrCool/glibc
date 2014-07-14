@@ -1,5 +1,9 @@
 2013-12-04  Alan Modra  <amodra@gmail.com>
 
+	[BZ #17153]
+	* elf/elf.h (DT_PPC64_NUM): Correct value.
+	* NEWS: Add to fixed bug list.
+
 	* sysdeps/powerpc/powerpc64/power7/memrchr.S: Correct stream hint.
 
 2014-04-02  Alan Modra  <amodra@gmail.com>

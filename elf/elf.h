@@ -2264,7 +2264,8 @@ typedef Elf32_Addr Elf32_Conflict;
 #define DT_PPC64_GLINK  (DT_LOPROC + 0)
 #define DT_PPC64_OPD	(DT_LOPROC + 1)
 #define DT_PPC64_OPDSZ	(DT_LOPROC + 2)
-#define DT_PPC64_NUM    3
+#define DT_PPC64_OPT	(DT_LOPROC + 3)
+#define DT_PPC64_NUM    4
 
 
 /* ARM specific declarations */
