@@ -1,5 +1,8 @@
 2014-08-08  Adhemerval Zanella  <azanella@linux.vnet.ibm.com>
 
+	* sysdeps/powerpc/powerpc64/entry.h: Fix TEXT_START definition for
+	powerpc64le.
+
 	* sysdeps/powerpc/fpu/test-powerpc-snan.c: Fix testcase for GLIC 2.17.
 
 	* Versions.def (libpthread) [GLIBC_2.3]: Add define.
