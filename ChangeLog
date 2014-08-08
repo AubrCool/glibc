@@ -1,5 +1,7 @@
 2014-08-08  Adhemerval Zanella  <azanella@linux.vnet.ibm.com>
 
+	* sysdeps/powerpc/fpu/test-powerpc-snan.c: Fix testcase for GLIC 2.17.
+
 	* Versions.def (libpthread) [GLIBC_2.3]: Add define.
 
 2014-02-04  Adhemerval Zanella  <azanella@linux.vnet.ibm.com>
