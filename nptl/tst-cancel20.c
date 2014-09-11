@@ -49,6 +49,7 @@ sh_body (void)
       puts ("read succeeded");
       exit (1);
     }
+  pthread_testcancel ();
 
   pthread_cleanup_pop (0);
 }
@@ -84,7 +85,7 @@ tf_body (void)
       puts ("read succeeded");
       exit (1);
     }
-
+  pthread_testcancel ();
   read (fd[0], &c, 1);
 
   pthread_cleanup_pop (0);

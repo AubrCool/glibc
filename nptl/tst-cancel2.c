@@ -33,6 +33,7 @@ tf (void *arg)
   char buf[100000];
 
   while (write (fd[1], buf, sizeof (buf)) > 0);
+  pthread_testcancel ();
 
   return (void *) 42l;
 }
