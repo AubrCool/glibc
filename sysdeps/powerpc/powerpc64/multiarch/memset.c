@@ -17,7 +17,6 @@
    <http://www.gnu.org/licenses/>.  */
 
 /* Define multiple versions only for definition in libc.  */
-#if defined SHARED && IS_IN (libc)
 /* Redefine memset so that the compiler won't complain about the type
    mismatch with the IFUNC selector in strong_alias, below.  */
 # undef memset
@@ -50,4 +49,3 @@ libc_ifunc (__libc_memset,
 #undef memset
 strong_alias (__libc_memset, memset);
 libc_hidden_ver (__libc_memset, memset);
-#endif

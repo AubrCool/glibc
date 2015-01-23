@@ -68,7 +68,6 @@ __libc_ifunc_impl_list (const char *name, struct libc_ifunc_impl *array,
 			      __memmove_power7)
 	      IFUNC_IMPL_ADD (array, i, memmove, 1, __memmove_ppc))
 
-#ifdef SHARED
   /* Support sysdeps/powerpc/powerpc64/multiarch/memset.c.  */
   IFUNC_IMPL (i, name, memset,
 	      IFUNC_IMPL_ADD (array, i, memset, hwcap2 & PPC_FEATURE2_ARCH_2_07,
@@ -81,6 +80,7 @@ __libc_ifunc_impl_list (const char *name, struct libc_ifunc_impl *array,
 			      __memset_power4)
 	      IFUNC_IMPL_ADD (array, i, memset, 1, __memset_ppc))
 
+#ifdef SHARED
   /* Support sysdeps/powerpc/powerpc64/multiarch/strcpy.c.  */
   IFUNC_IMPL (i, name, strcpy,
 	      IFUNC_IMPL_ADD (array, i, strcpy, hwcap2 & PPC_FEATURE2_ARCH_2_07,
