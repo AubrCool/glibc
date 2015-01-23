@@ -16,19 +16,25 @@
    License along with the GNU C Library; if not, see
    <http://www.gnu.org/licenses/>.  */
 
-#if defined SHARED && IS_IN (libc)
-# include <string.h>
-# include <shlib-compat.h>
-# include "init-arch.h"
+/* Redefine strcpy so that the compiler won't complain about the type
+   mismatch with the IFUNC selector in strong_alias, below.  */
+#define strcpy __redirect_strcpy
+#include <string.h>
+#include "init-arch.h"
 
-extern __typeof (strcpy) __strcpy_ppc attribute_hidden;
-extern __typeof (strcpy) __strcpy_power7 attribute_hidden;
-extern __typeof (strcpy) __strcpy_power8 attribute_hidden;
+extern __typeof (__redirect_strcpy) __libc_strcpy;
 
-libc_ifunc (strcpy,
+extern __typeof (__redirect_strcpy) __strcpy_ppc attribute_hidden;
+extern __typeof (__redirect_strcpy) __strcpy_power7 attribute_hidden;
+extern __typeof (__redirect_strcpy) __strcpy_power8 attribute_hidden;
+
+libc_ifunc (__libc_strcpy,
             (hwcap2 & PPC_FEATURE2_ARCH_2_07)
             ? __strcpy_power8 :
               (hwcap & PPC_FEATURE_HAS_VSX)
               ? __strcpy_power7
             : __strcpy_ppc);
-#endif
+
+#undef strcpy
+strong_alias (__libc_strcpy, strcpy)
+libc_hidden_ver (__libc_strcpy, strcpy)
