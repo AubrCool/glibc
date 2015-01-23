@@ -16,20 +16,22 @@
    License along with the GNU C Library; if not, see
    <http://www.gnu.org/licenses/>.  */
 
-/* Define multiple versions only for definition in libc.  */
-#if defined SHARED && IS_IN (libc)
-# include <string.h>
-# include <shlib-compat.h>
-# include "init-arch.h"
+/* Redefine strncmp so that the compiler won't complain about the type
+   mismatch with the IFUNC selector in strong_alias, below.  */
+#undef strncmp
+#define _HAVE_STRING_ARCH_strncmp
+#define strncmp __redirect_strncmp
+#include <string.h>
+#include "init-arch.h"
 
-extern __typeof (strncmp) __strncmp_ppc attribute_hidden;
-extern __typeof (strncmp) __strncmp_power4 attribute_hidden;
-extern __typeof (strncmp) __strncmp_power7 attribute_hidden;
-extern __typeof (strncmp) __strncmp_power8 attribute_hidden;
+extern __typeof (__redirect_strncmp) __libc_strncmp;
 
-/* Avoid DWARF definition DIE on ifunc symbol so that GDB can handle
-   ifunc symbol properly.  */
-libc_ifunc (strncmp,
+extern __typeof (__redirect_strncmp) __strncmp_ppc attribute_hidden;
+extern __typeof (__redirect_strncmp) __strncmp_power4 attribute_hidden;
+extern __typeof (__redirect_strncmp) __strncmp_power7 attribute_hidden;
+extern __typeof (__redirect_strncmp) __strncmp_power8 attribute_hidden;
+
+libc_ifunc (__libc_strncmp,
             (hwcap2 & PPC_FEATURE2_ARCH_2_07)
             ? __strncmp_power8 :
               (hwcap & PPC_FEATURE_HAS_VSX)
@@ -37,4 +39,7 @@ libc_ifunc (strncmp,
 		(hwcap & PPC_FEATURE_POWER4)
 		? __strncmp_power4
             : __strncmp_ppc);
-#endif
+
+#undef strncmp
+strong_alias (__libc_strncmp, strncmp)
+libc_hidden_ver (__libc_strncmp, strncmp)

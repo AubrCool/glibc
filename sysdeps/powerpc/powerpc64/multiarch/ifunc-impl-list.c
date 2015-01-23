@@ -112,8 +112,6 @@ __libc_ifunc_impl_list (const char *name, struct libc_ifunc_impl *array,
 			      __strlen_power7)
 	      IFUNC_IMPL_ADD (array, i, strlen, 1,
 			      __strlen_ppc))
-#ifdef SHARED
-
   /* Support sysdeps/powerpc/powerpc64/multiarch/strncmp.c.  */
   IFUNC_IMPL (i, name, strncmp,
 	      IFUNC_IMPL_ADD (array, i, strncmp, hwcap2 & PPC_FEATURE2_ARCH_2_07,
@@ -125,6 +123,7 @@ __libc_ifunc_impl_list (const char *name, struct libc_ifunc_impl *array,
 	      IFUNC_IMPL_ADD (array, i, strncmp, 1,
 			      __strncmp_ppc))
 
+#ifdef SHARED
   /* Support sysdeps/powerpc/powerpc64/multiarch/strchrnul.c.  */
   IFUNC_IMPL (i, name, strchrnul,
 	      IFUNC_IMPL_ADD (array, i, strchrnul,

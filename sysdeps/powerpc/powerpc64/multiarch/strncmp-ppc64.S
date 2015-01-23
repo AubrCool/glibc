@@ -17,7 +17,6 @@
 
 #include <sysdep.h>
 
-#if defined SHARED && IS_IN (libc)
 #undef EALIGN
 #define EALIGN(name,alignt,words)				\
   .section ".text";						\
@@ -34,9 +33,7 @@
   TRACEBACK(__strncmp_ppc)					\
   END_2(__strncmp_ppc)
 
-# undef libc_hidden_builtin_def
-# define libc_hidden_builtin_def(name)				\
-    .globl __GI_strncmp; __GI_strncmp = __strncmp_ppc
-#endif
+#undef libc_hidden_builtin_def
+#define libc_hidden_builtin_def(name)
 
 #include <sysdeps/powerpc/powerpc64/strncmp.S>
