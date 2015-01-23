@@ -18,15 +18,12 @@
 #include <string.h>
 
 #define STRRCHR __strrchr_ppc
+
 #undef weak_alias
-#define weak_alias(name, aliasname) \
-  extern __typeof (__strrchr_ppc) aliasname \
-    __attribute__ ((weak, alias ("__strrchr_ppc")));
-#if IS_IN (libc) && defined(SHARED)
-# undef libc_hidden_builtin_def
-# define libc_hidden_builtin_def(name) \
-  __hidden_ver1(__strrchr_ppc, __GI_strrchr, __strrchr_ppc);
-#endif
+#define weak_alias(name, aliasname)
+
+#undef libc_hidden_builtin_def
+#define libc_hidden_builtin_def(name)
 
 extern __typeof (strrchr) __strrchr_ppc attribute_hidden;
 

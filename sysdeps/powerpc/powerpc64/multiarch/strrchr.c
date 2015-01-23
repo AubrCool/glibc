@@ -16,20 +16,21 @@
    License along with the GNU C Library; if not, see
    <http://www.gnu.org/licenses/>.  */
 
-/* Define multiple versions only for definition in libc.  */
-#if IS_IN (libc)
-# include <string.h>
-# include <shlib-compat.h>
-# include "init-arch.h"
+#define strrchr __redirect_strrchr
+#include <string.h>
+#include "init-arch.h"
 
-extern __typeof (strrchr) __strrchr_ppc attribute_hidden;
-extern __typeof (strrchr) __strrchr_power7 attribute_hidden;
+extern __typeof (__redirect_strrchr) __libc_strrchr;
 
-/* Avoid DWARF definition DIE on ifunc symbol so that GDB can handle
-   ifunc symbol properly.  */
-libc_ifunc (strrchr,
+extern __typeof (__redirect_strrchr) __strrchr_ppc attribute_hidden;
+extern __typeof (__redirect_strrchr) __strrchr_power7 attribute_hidden;
+
+libc_ifunc (__libc_strrchr,
             (hwcap & PPC_FEATURE_HAS_VSX)
             ? __strrchr_power7
             : __strrchr_ppc);
+
+#undef strrchr
+strong_alias (__libc_strrchr, strrchr)
+libc_hidden_ver (__libc_strrchr, strrchr)
 weak_alias (strrchr, rindex)
-#endif
