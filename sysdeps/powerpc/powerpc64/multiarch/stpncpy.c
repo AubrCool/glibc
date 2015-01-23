@@ -16,21 +16,33 @@
    License along with the GNU C Library; if not, see
    <http://www.gnu.org/licenses/>.  */
 
-#if IS_IN (libc)
-# include <string.h>
-# include <shlib-compat.h>
-# include "init-arch.h"
+/* Redefine stpncpy so that the compiler won't complain about the type
+   mismatch with the IFUNC selector in strong_alias, below.  */
+#undef __stpncpy
+#define __stpncpy ____redirect_stpncpy
+#define stpncpy __redirect_stpncpy
+#include <string.h>
+#include "init-arch.h"
 
-extern __typeof (__stpncpy) __stpncpy_ppc attribute_hidden;
-extern __typeof (__stpncpy) __stpncpy_power7 attribute_hidden;
-extern __typeof (__stpncpy) __stpncpy_power8 attribute_hidden;
+extern __typeof (____redirect_stpncpy) __libc_stpncpy;
 
-libc_ifunc (__stpncpy,
+extern __typeof (____redirect_stpncpy) __stpncpy_ppc attribute_hidden;
+extern __typeof (____redirect_stpncpy) __stpncpy_power7 attribute_hidden;
+extern __typeof (____redirect_stpncpy) __stpncpy_power8 attribute_hidden;
+
+libc_ifunc (__libc_stpncpy,
             (hwcap2 & PPC_FEATURE2_ARCH_2_07)
             ? __stpncpy_power8 :
               (hwcap & PPC_FEATURE_HAS_VSX)
               ? __stpncpy_power7
             : __stpncpy_ppc);
 
-weak_alias (__stpncpy, stpncpy)
-#endif
+#undef __stpncpy
+#undef stpncpy
+
+/* Define:
+   weak_alias (__stpncpy, stpncpy)
+   libc_hidden_def (__stpncpy)  */
+strong_alias (__libc_stpncpy, __stpncpy)
+weak_alias (__libc_stpncpy, stpncpy)
+libc_hidden_ver (__libc_stpncpy, __stpncpy)

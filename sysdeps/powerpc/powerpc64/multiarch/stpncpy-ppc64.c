@@ -17,10 +17,8 @@
    <http://www.gnu.org/licenses/>.  */
 
 #define STPNCPY __stpncpy_ppc
-#ifdef SHARED
+
 #undef libc_hidden_def
-#define libc_hidden_def(name) \
-  __hidden_ver1 (__stpncpy_ppc, __GI___stpncpy, __stpncpy_ppc);
-#endif
+#define libc_hidden_def(name)
 
 #include <string/stpncpy.c>
