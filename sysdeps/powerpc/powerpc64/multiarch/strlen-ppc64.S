@@ -18,9 +18,8 @@
 
 #include <sysdep.h>
 
-#if defined SHARED && IS_IN (libc)
-# undef ENTRY
-# define ENTRY(name)						\
+#undef ENTRY
+#define ENTRY(name)						\
   .section ".text";						\
   ENTRY_2(__strlen_ppc)						\
   .align ALIGNARG(2);						\
@@ -28,14 +27,13 @@
   cfi_startproc;						\
   LOCALENTRY(__strlen_ppc)
 
-# undef END
-# define END(name)						\
+#undef END
+#define END(name)						\
   cfi_endproc;							\
   TRACEBACK(__strlen_ppc)					\
   END_2(__strlen_ppc)
 
-# undef libc_hidden_builtin_def
-# define libc_hidden_builtin_def(name)
-#endif
+#undef libc_hidden_builtin_def
+#define libc_hidden_builtin_def(name)
 
 #include <sysdeps/powerpc/powerpc64/strlen.S>

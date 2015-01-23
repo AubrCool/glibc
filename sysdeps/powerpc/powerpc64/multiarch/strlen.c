@@ -16,7 +16,6 @@
    License along with the GNU C Library; if not, see
    <http://www.gnu.org/licenses/>.  */
 
-#if defined SHARED && IS_IN (libc)
 /* Redefine strlen so that the compiler won't complain about the type
    mismatch with the IFUNC selector in strong_alias, below.  */
 # undef strlen
@@ -38,4 +37,3 @@ libc_ifunc (__libc_strlen,
 #undef strlen
 strong_alias (__libc_strlen, strlen)
 libc_hidden_ver (__libc_strlen, strlen)
-#endif
