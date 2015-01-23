@@ -16,24 +16,28 @@
    License along with the GNU C Library; if not, see
    <http://www.gnu.org/licenses/>.  */
 
-/* Define multiple versions only for definition in libc.  */
-#if IS_IN (libc)
-# include <string.h>
-# include <shlib-compat.h>
-# include "init-arch.h"
+/* Redefine memcpy so that the compiler won't complain about the type
+   mismatch with the IFUNC selector in strong_alias, below.  */
+#undef memcmp
+#define memcmp __redirect_memcmp
+#include <string.h>
+#include "init-arch.h"
 
-extern __typeof (memcmp) __memcmp_ppc attribute_hidden;
-extern __typeof (memcmp) __memcmp_power4 attribute_hidden;
-extern __typeof (memcmp) __memcmp_power7 attribute_hidden;
+extern __typeof (__redirect_memcmp) __libc_memcmp;
 
-/* Avoid DWARF definition DIE on ifunc symbol so that GDB can handle
-   ifunc symbol properly.  */
-libc_ifunc (memcmp,
+extern __typeof (__redirect_memcmp) __memcmp_ppc attribute_hidden;
+extern __typeof (__redirect_memcmp) __memcmp_power4 attribute_hidden;
+extern __typeof (__redirect_memcmp) __memcmp_power7 attribute_hidden;
+
+libc_ifunc (__libc_memcmp,
             (hwcap & PPC_FEATURE_HAS_VSX)
             ? __memcmp_power7 :
 	      (hwcap & PPC_FEATURE_POWER4)
 		? __memcmp_power4
             : __memcmp_ppc);
-#else
-#include <string/memcmp.c>
-#endif
+
+#undef memcmp
+strong_alias (__libc_memcmp, memcmp)
+libc_hidden_ver (__libc_memcmp, memcmp)
+
+weak_alias (memcmp, bcmp)

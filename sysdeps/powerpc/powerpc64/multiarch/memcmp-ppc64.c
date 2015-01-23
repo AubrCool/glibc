@@ -18,15 +18,12 @@
 #include <string.h>
 
 #define MEMCMP __memcmp_ppc
+
 #undef weak_alias
-#define weak_alias(name, aliasname) \
-  extern __typeof (__memcmp_ppc) aliasname \
-    __attribute__ ((weak, alias ("__memcmp_ppc")));
-#if IS_IN (libc) && defined(SHARED)
-# undef libc_hidden_builtin_def
-# define libc_hidden_builtin_def(name) \
-  __hidden_ver1(__memcmp_ppc, __GI_memcmp, __memcmp_ppc);
-#endif
+#define weak_alias(name, aliasname)
+
+#undef libc_hidden_builtin_def
+#define libc_hidden_builtin_def(name)
 
 extern __typeof (memcmp) __memcmp_ppc attribute_hidden;
 
