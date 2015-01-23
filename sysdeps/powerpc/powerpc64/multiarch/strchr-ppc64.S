@@ -18,9 +18,8 @@
 
 #include <sysdep.h>
 
-#ifdef SHARED
-# undef ENTRY
-# define ENTRY(name)						\
+#undef ENTRY
+#define ENTRY(name)						\
   .section ".text";						\
   ENTRY_2(__strchr_ppc)						\
   .align ALIGNARG(2);						\
@@ -28,15 +27,13 @@
   cfi_startproc;						\
   LOCALENTRY(__strchr_ppc)
 
-# undef END
-# define END(name)						\
+#undef END
+#define END(name)						\
   cfi_endproc;							\
   TRACEBACK(__strchr_ppc)					\
   END_2(__strchr_ppc)
 
-# undef libc_hidden_builtin_def
-# define libc_hidden_builtin_def(name)				\
-    .globl __GI_strchr; __GI_strchr = __strchr_ppc
-#endif
+#undef libc_hidden_builtin_def
+#define libc_hidden_builtin_def(name)
 
 #include <sysdeps/powerpc/powerpc64/strchr.S>

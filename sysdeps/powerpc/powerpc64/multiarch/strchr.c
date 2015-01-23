@@ -17,19 +17,30 @@
    <http://www.gnu.org/licenses/>.  */
 
 /* Define multiple versions only for definition in libc.  */
-#if defined SHARED && IS_IN (libc)
+#if IS_IN (libc)
+/* Redefine memcpy so that the compiler won't complain about the type
+   mismatch with the IFUNC selector in strong_alias, below.  */
+# undef strchr
+# define _HAVE_STRING_ARCH_strchr
+# define strchr __redirect_strchr
 # include <string.h>
 # include <shlib-compat.h>
 # include "init-arch.h"
 
-extern __typeof (strchr) __strchr_ppc attribute_hidden;
-extern __typeof (strchr) __strchr_power7 attribute_hidden;
+extern __typeof (__redirect_strchr) __libc_strchr;
+
+extern __typeof (__redirect_strchr) __strchr_ppc attribute_hidden;
+extern __typeof (__redirect_strchr) __strchr_power7 attribute_hidden;
 
 /* Avoid DWARF definition DIE on ifunc symbol so that GDB can handle
    ifunc symbol properly.  */
-libc_ifunc (strchr,
+libc_ifunc (__libc_strchr,
 	    (hwcap & PPC_FEATURE_HAS_VSX)
             ? __strchr_power7
             : __strchr_ppc);
+
+#undef strchr
+strong_alias (__libc_strchr, strchr)
 weak_alias (strchr, index)
+libc_hidden_ver (__libc_strchr, strchr)
 #endif
