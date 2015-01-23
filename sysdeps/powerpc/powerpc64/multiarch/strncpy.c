@@ -16,23 +16,28 @@
    License along with the GNU C Library; if not, see
    <http://www.gnu.org/licenses/ >.  */
 
-/* Define multiple versions only for definition in libc. */
-#if IS_IN (libc)
-# include <string.h>
-# include <shlib-compat.h>
-# include "init-arch.h"
+/* Redefine strncpy so that the compiler won't complain about the type
+   mismatch with the IFUNC selector in strong_alias, below.  */
+#undef strncpy
+#define _HAVE_STRING_ARCH_strncpy
+#define strncpy __redirect_strncpy
+#include <string.h>
+#include <shlib-compat.h>
+#include "init-arch.h"
 
-extern __typeof (strncpy) __strncpy_ppc attribute_hidden;
-extern __typeof (strncpy) __strncpy_power7 attribute_hidden;
-extern __typeof (strncpy) __strncpy_power8 attribute_hidden;
+extern __typeof (__redirect_strncpy) __libc_strncpy;
 
-/* Avoid DWARF definition DIE on ifunc symbol so that GDB can handle
- ifunc symbol properly. */
-libc_ifunc (strncpy,
+extern __typeof (__redirect_strncpy) __strncpy_ppc attribute_hidden;
+extern __typeof (__redirect_strncpy) __strncpy_power7 attribute_hidden;
+extern __typeof (__redirect_strncpy) __strncpy_power8 attribute_hidden;
+
+libc_ifunc (__libc_strncpy,
             (hwcap2 & PPC_FEATURE2_ARCH_2_07)
             ? __strncpy_power8 :
               (hwcap & PPC_FEATURE_HAS_VSX)
               ? __strncpy_power7
             : __strncpy_ppc);
 
-#endif
+#undef strncpy
+strong_alias (__libc_strncpy, strncpy)
+libc_hidden_ver (__libc_strncpy, strncpy)
