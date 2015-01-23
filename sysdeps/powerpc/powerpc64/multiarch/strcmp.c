@@ -16,19 +16,27 @@
    License along with the GNU C Library; if not, see
    <http://www.gnu.org/licenses/>.  */
 
-#if defined SHARED && IS_IN (libc)
-# include <string.h>
-# include <shlib-compat.h>
-# include "init-arch.h"
+/* Redefine strcmp so that the compiler won't complain about the type
+   mismatch with the IFUNC selector in strong_alias, below.  */
+#undef strcmp
+#define _HAVE_STRING_ARCH_strcmp
+#define strcmp __redirect_strcmp
+#include <string.h>
+#include "init-arch.h"
 
-extern __typeof (strcmp) __strcmp_ppc attribute_hidden;
-extern __typeof (strcmp) __strcmp_power7 attribute_hidden;
-extern __typeof (strcmp) __strcmp_power8 attribute_hidden;
+extern __typeof (__redirect_strcmp) __libc_strcmp;
 
-libc_ifunc (strcmp,
+extern __typeof (__redirect_strcmp) __strcmp_ppc attribute_hidden;
+extern __typeof (__redirect_strcmp) __strcmp_power7 attribute_hidden;
+extern __typeof (__redirect_strcmp) __strcmp_power8 attribute_hidden;
+
+libc_ifunc (__libc_strcmp,
             (hwcap2 & PPC_FEATURE2_ARCH_2_07)
               ? __strcmp_power8 :
               (hwcap & PPC_FEATURE_HAS_VSX)
               ? __strcmp_power7
             : __strcmp_ppc);
-#endif
+
+#undef strcmp
+strong_alias (__libc_strcmp, strcmp)
+libc_hidden_ver (__libc_strcmp, strcmp)

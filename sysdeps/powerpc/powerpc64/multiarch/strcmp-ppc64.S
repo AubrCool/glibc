@@ -18,9 +18,8 @@
 
 #include <sysdep.h>
 
-#if defined SHARED && IS_IN (libc)
-# undef EALIGN
-# define EALIGN(name, alignt, words)				\
+#undef EALIGN
+#define EALIGN(name, alignt, words)				\
   .section ".text";						\
   ENTRY_2(__strcmp_ppc)						\
   .align ALIGNARG(alignt);					\
@@ -29,15 +28,13 @@
   cfi_startproc;						\
   LOCALENTRY(__strcmp_ppc)
 
-# undef END
-# define END(name)						\
+#undef END
+#define END(name)						\
   cfi_endproc;							\
   TRACEBACK(__strcmp_ppc)					\
   END_2(__strcmp_ppc)
 
-# undef libc_hidden_builtin_def
-# define libc_hidden_builtin_def(name)				\
-    .globl __GI_strcmp; __GI_strcmp = __strcmp_ppc
-#endif
+#undef libc_hidden_builtin_def
+#define libc_hidden_builtin_def(name)
 
 #include <sysdeps/powerpc/powerpc64/strcmp.S>
