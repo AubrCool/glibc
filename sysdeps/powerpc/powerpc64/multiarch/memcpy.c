@@ -16,16 +16,12 @@
    License along with the GNU C Library; if not, see
    <http://www.gnu.org/licenses/>.  */
 
-/* Define multiple versions only for the definition in lib and for
-   DSO.  In static binaries we need memcpy before the initialization
-   happened.  */
-#if defined SHARED && IS_IN (libc)
 /* Redefine memcpy so that the compiler won't complain about the type
    mismatch with the IFUNC selector in strong_alias, below.  */
-# undef memcpy
-# define memcpy __redirect_memcpy
-# include <string.h>
-# include "init-arch.h"
+#undef memcpy
+#define memcpy __redirect_memcpy
+#include <string.h>
+#include "init-arch.h"
 
 extern __typeof (__redirect_memcpy) __libc_memcpy;
 
@@ -50,6 +46,5 @@ libc_ifunc (__libc_memcpy,
             : __memcpy_ppc);
 
 #undef memcpy
-strong_alias (__libc_memcpy, memcpy);
-libc_hidden_ver (__libc_memcpy, memcpy);
-#endif
+strong_alias (__libc_memcpy, memcpy)
+libc_hidden_ver (__libc_memcpy, memcpy)

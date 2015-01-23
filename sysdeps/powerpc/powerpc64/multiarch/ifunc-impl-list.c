@@ -48,7 +48,6 @@ __libc_ifunc_impl_list (const char *name, struct libc_ifunc_impl *array,
   else if (hwcap & PPC_FEATURE_POWER5)
     hwcap |= PPC_FEATURE_POWER4;
 
-#ifdef SHARED
   /* Support sysdeps/powerpc/powerpc64/multiarch/memcpy.c.  */
   IFUNC_IMPL (i, name, memcpy,
 	      IFUNC_IMPL_ADD (array, i, memcpy, hwcap & PPC_FEATURE_HAS_VSX,
@@ -63,6 +62,7 @@ __libc_ifunc_impl_list (const char *name, struct libc_ifunc_impl *array,
 			      __memcpy_power4)
 	      IFUNC_IMPL_ADD (array, i, memcpy, 1, __memcpy_ppc))
 
+#ifdef SHARED
   /* Support sysdeps/powerpc/powerpc64/multiarch/memmove.c.  */
   IFUNC_IMPL (i, name, memmove,
 	      IFUNC_IMPL_ADD (array, i, memmove, hwcap & PPC_FEATURE_HAS_VSX,
