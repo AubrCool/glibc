@@ -123,7 +123,6 @@ __libc_ifunc_impl_list (const char *name, struct libc_ifunc_impl *array,
 	      IFUNC_IMPL_ADD (array, i, strncmp, 1,
 			      __strncmp_ppc))
 
-#ifdef SHARED
   /* Support sysdeps/powerpc/powerpc64/multiarch/strchrnul.c.  */
   IFUNC_IMPL (i, name, strchrnul,
 	      IFUNC_IMPL_ADD (array, i, strchrnul,
@@ -131,7 +130,6 @@ __libc_ifunc_impl_list (const char *name, struct libc_ifunc_impl *array,
 			      __strchrnul_power7)
 	      IFUNC_IMPL_ADD (array, i, strchrnul, 1,
 			      __strchrnul_ppc))
-#endif
 
   /* Support sysdeps/powerpc/powerpc64/multiarch/memcmp.c.  */
   IFUNC_IMPL (i, name, memcmp,
