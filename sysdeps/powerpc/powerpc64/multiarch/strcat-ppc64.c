@@ -18,11 +18,9 @@
 #include <string.h>
 
 #define STRCAT __strcat_ppc
-#ifdef SHARED
-# undef libc_hidden_builtin_def
-# define libc_hidden_builtin_def(name) \
-  __hidden_ver1 (__strcat_ppc, __GI_strcat, __strcat_ppc);
-#endif
+
+#undef libc_hidden_builtin_def
+#define libc_hidden_builtin_def(name)
 
 extern __typeof (strcat) __strcat_ppc attribute_hidden;
 

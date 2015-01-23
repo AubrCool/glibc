@@ -16,19 +16,26 @@
    License along with the GNU C Library; if not, see
    <http://www.gnu.org/licenses/>.  */
 
-#if IS_IN (libc)
-# include <string.h>
-# include <shlib-compat.h>
-# include "init-arch.h"
+/* Redefine strcat so that the compiler won't complain about the type
+   mismatch with the IFUNC selector in strong_alias, below.  */
+#define strcat __redirect_strcat
+#include <string.h>
+#include "init-arch.h"
 
-extern __typeof (strcat) __strcat_ppc attribute_hidden;
-extern __typeof (strcat) __strcat_power7 attribute_hidden;
-extern __typeof (strcat) __strcat_power8 attribute_hidden;
+extern __typeof (__redirect_strcat) __libc_strcat;
 
-libc_ifunc (strcat,
+extern __typeof (__redirect_strcat) __strcat_ppc attribute_hidden;
+extern __typeof (__redirect_strcat) __strcat_power7 attribute_hidden;
+extern __typeof (__redirect_strcat) __strcat_power8 attribute_hidden;
+
+libc_ifunc (__libc_strcat,
             (hwcap2 & PPC_FEATURE2_ARCH_2_07)
             ? __strcat_power8 :
               (hwcap & PPC_FEATURE_HAS_VSX)
               ? __strcat_power7
             : __strcat_ppc);
-#endif
+
+#undef strcat
+/* Define libc_hidden_builtin_def (strcat)  */
+strong_alias (__libc_strcat, strcat)
+libc_hidden_ver (__libc_strcat, strcat)
