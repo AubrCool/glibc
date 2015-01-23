@@ -18,9 +18,8 @@
 
 #include <sysdep.h>
 
-#if defined SHARED && IS_IN (libc)
-# undef EALIGN
-# define EALIGN(name, alignt, words)				\
+#undef EALIGN
+#define EALIGN(name, alignt, words)				\
   .section ".text";						\
   ENTRY_2(__stpcpy_ppc)						\
   .align ALIGNARG(alignt);					\
@@ -29,20 +28,19 @@
   cfi_startproc;						\
   LOCALENTRY(__stpcpy_ppc)
 
-# undef END
-# define END(name)						\
+#undef END
+#define END(name)						\
   cfi_endproc;							\
   TRACEBACK(__stpcpy_ppc)					\
   END_2(__stpcpy_ppc)
 
-# undef weak_alias
-# define weak_alias(name, alias)
-# undef libc_hidden_def
-# define libc_hidden_def(name)
+#undef weak_alias
+#define weak_alias(name, alias)
 
-# undef libc_hidden_builtin_def
-# define libc_hidden_builtin_def(name)				\
-    .globl __GI___stpcpy; __GI___stpcpy = __stpcpy_ppc
-#endif
+#undef libc_hidden_def
+#define libc_hidden_def(name)
+
+#undef libc_hidden_builtin_def
+#define libc_hidden_builtin_def(name)
 
 #include <sysdeps/powerpc/powerpc64/stpcpy.S>
