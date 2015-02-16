@@ -19,24 +19,26 @@
 #include "pthreadP.h"
 
 int
-pthread_spin_lock (lock)
-     pthread_spinlock_t *lock;
+pthread_spin_lock (pthread_spinlock_t *lock)
 {
   unsigned int __tmp;
 
   asm volatile (
-       "1:	lwarx	%0,0,%1\n"
+       "0:	lwzx    %0,0,%1\n"
+       "	cmpwi   0,%0,0\n"
+       "	bne	0b\n"
+       "1:	lwarx	%0,0,%1" MUTEX_HINT_ACQ "\n"
        "	cmpwi	0,%0,0\n"
        "	bne-	2f\n"
        "	stwcx.	%2,0,%1\n"
        "	bne-	2f\n"
-       "	isync\n"
-       "	.subsection 1\n"
-       "2:	lwzx	%0,0,%1\n"
-       "	cmpwi	0,%0,0\n"
-       "	bne	2b\n"
-       "	b	1b\n"
-       "	.previous"
+                __ARCH_ACQ_INSTR "\n"
+       "        .subsection 1\n"
+       "2:	lwzx    %0,0,%1\n"
+       "        cmpwi   0,%0,0\n"
+       "        bne     2b\n"
+       "        b       1b\n"
+       "        .previous"
        : "=&r" (__tmp)
        : "r" (lock), "r" (1)
        : "cr0", "memory");
