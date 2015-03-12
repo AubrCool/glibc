@@ -16,10 +16,6 @@
    License along with the GNU C Library; if not, see
    <http://www.gnu.org/licenses/>.  */
 
-/* Define multiple versions only for the definition in lib and for
-   DSO.  In static binaries we need memmove before the initialization
-   happened.  */
-#if defined SHARED && IS_IN (libc)
 /* Redefine memmove so that the compiler won't complain about the type
    mismatch with the IFUNC selector in strong_alias, below.  */
 # undef memmove
@@ -40,6 +36,3 @@ libc_ifunc (__libc_memmove,
 #undef memmove
 strong_alias (__libc_memmove, memmove);
 libc_hidden_ver (__libc_memmove, memmove);
-#else
-# include <string/memmove.c>
-#endif

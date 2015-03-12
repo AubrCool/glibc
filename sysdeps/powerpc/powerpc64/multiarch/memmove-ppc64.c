@@ -36,9 +36,7 @@ extern __typeof (memcpy) __memcpy_ppc attribute_hidden;
 # define memcpy __memcpy_ppc
 #endif
 
-#if IS_IN (libc) && defined(SHARED)
-# undef libc_hidden_builtin_def
-# define libc_hidden_builtin_def(name)
-#endif
+#undef libc_hidden_builtin_def
+#define libc_hidden_builtin_def(name)
 
 #include <string/memmove.c>
